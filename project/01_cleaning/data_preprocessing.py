@@ -1,3 +1,8 @@
+import argparse
+
+parser = argparse.ArgumentParser()
+parser.add_argument("dataset")
+
 # preprocess data
 def clean_dataset(df, drop_null_rows, cols_to_drop=[]):
   '''
