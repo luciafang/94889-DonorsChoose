@@ -14,10 +14,12 @@ def run_pipeline():
 
     # Define the preprocessing directory
     preprocessing_dir = os.path.join(current_dir, "preprocessing")
+    split_dir = os.path.join(current_dir, "split")
 
     # Define paths for the scripts
     merge_script = os.path.join(preprocessing_dir, "feature_selection.py")
     clean_script = os.path.join(preprocessing_dir, "data_cleaning.py")
+    split_script = os.path.join(split_dir, "data_train_test_split.py")
 
     ############################
     # Run the merge script
@@ -27,6 +29,11 @@ def run_pipeline():
     # Run the cleaning script
     print("Running data cleaning...")
     subprocess.run(["python", clean_script], cwd=preprocessing_dir, check=True)
+
+    ############################
+    # run train test split
+    print("Running train test split...")
+    subprocess.run(["python", split_script], cwd=split_dir, check=True)
 
     print("Pipeline complete.")
     ############################
