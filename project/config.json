@@ -15,7 +15,8 @@
         "total_price_excluding_optional_support",
         "primary_focus_subject",
         "students_reached",
-        "resource_type"
+        "resource_type",
+        "fully_funded"
     ],
     "one_hot_encode_features": [
         "poverty_level",
