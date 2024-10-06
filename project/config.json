@@ -1,0 +1,28 @@
+{
+    "raw_datasets": {
+        "donations": "../data/sub_donations.csv",
+        "essays": "../data/sub_essays.csv",
+        "projects": "../data/sub_projects.csv",
+        "resources": "../data/sub_resources.csv",
+        "outcomes": "../data/sub_outcomes.csv"
+    },
+    "dataset": "../outputs/cleaned_dataset.csv",
+    "features_to_use": [
+        "poverty_level",
+        "school_metro",
+        "teacher_referred_count",
+        "grade_level",
+        "total_price_excluding_optional_support",
+        "primary_focus_subject",
+        "students_reached",
+        "resource_type"
+    ],
+    "one_hot_encode_features": [
+        "poverty_level",
+        "school_metro",
+        "grade_level",
+        "primary_focus_subject",
+        "resource_type"
+    ]
+}
+  
