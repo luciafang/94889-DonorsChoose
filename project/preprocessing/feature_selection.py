@@ -30,13 +30,13 @@ def merge_datasets(donations_file, essays_file, projects_file, resources_file, o
     :return: Merged DataFrame
     """
     # donations = pd.read_csv(donations_file)
-    essays = pd.read_csv(essays_file)
+    # essays = pd.read_csv(essays_file)
     projects = pd.read_csv(projects_file, parse_dates=['date_posted'])
     # resources = pd.read_csv(resources_file)
     outcomes = pd.read_csv(outcomes_file)
 
     merged_data = pd.merge(projects, outcomes, on='projectid', how='left')
-    merged_data = pd.merge(merged_data, essays, on=['projectid', 'teacher_acctid'], how='left')
+    # merged_data = pd.merge(merged_data, essays, on=['projectid', 'teacher_acctid'], how='left')
 
     return merged_data
 
