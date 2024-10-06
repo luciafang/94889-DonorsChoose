@@ -45,27 +45,27 @@ def remove_outliers(df):
     numeric_cols = df.select_dtypes(include=[np.number]).columns
     initial_row_count = df.shape[0]
 
-    for col in numeric_cols:
-        if col in skipped_columns:
-            print(f"Skipping outlier removal for column '{col}'.")
-            continue
-
-        Q1 = df[col].quantile(0.25)
-        Q3 = df[col].quantile(0.75)
-        IQR = Q3 - Q1
-        lower_bound = Q1 - (1.5 * IQR)
-        upper_bound = Q3 + (1.5 * IQR)
-
-        # Identify outliers
-        outliers = df[(df[col] < lower_bound) | (df[col] > upper_bound)]
-        outlier_count = outliers.shape[0]
-
-        # Print information about outliers
-        if outlier_count > 0:
-            print(f"Column '{col}': Found {outlier_count} outliers (lower bound: {lower_bound}, upper bound: {upper_bound}).")
-        
-        # Remove outliers
-        df = df[(df[col] >= lower_bound) & (df[col] <= upper_bound)]
+    # for col in numeric_cols:
+    #     if col in skipped_columns:
+    #         print(f"Skipping outlier removal for column '{col}'.")
+    #         continue
+    #
+    #     Q1 = df[col].quantile(0.25)
+    #     Q3 = df[col].quantile(0.75)
+    #     IQR = Q3 - Q1
+    #     lower_bound = Q1 - (1.5 * IQR)
+    #     upper_bound = Q3 + (1.5 * IQR)
+    #
+    #     # Identify outliers
+    #     outliers = df[(df[col] < lower_bound) | (df[col] > upper_bound)]
+    #     outlier_count = outliers.shape[0]
+    #
+    #     # Print information about outliers
+    #     if outlier_count > 0:
+    #         print(f"Column '{col}': Found {outlier_count} outliers (lower bound: {lower_bound}, upper bound: {upper_bound}).")
+    #
+    #     # Remove outliers
+    #     df = df[(df[col] >= lower_bound) & (df[col] <= upper_bound)]
 
     final_row_count = df.shape[0]
     dropped_outlier_count = initial_row_count - final_row_count
@@ -82,7 +82,7 @@ def one_hot_encode(df, categorical_features):
     :return: DataFrame with one-hot encoded features
     """
     print(f"One-hot encoding: {categorical_features}")
-    df_encoded = pd.get_dummies(df, columns=categorical_features, drop_first=True)
+    df_encoded = pd.get_dummies(df, columns=categorical_features)
     return df_encoded
 
 # Load configuration from JSON

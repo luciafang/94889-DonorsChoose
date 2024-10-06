@@ -63,6 +63,7 @@ if __name__ == "__main__":
     # Select features from the merged dataset
     features_to_use = config.get("features_to_use", [])
     df_selected = select_features(merged_data, features_to_use)
+    df_selected['fully_funded'] = df_selected['fully_funded'].map({'t': int(1), 'f': int(0)})
     dataset_path = "../outputs/selected_dataset.csv"
 
     output_dir = os.path.dirname(dataset_path)
