@@ -27,6 +27,11 @@ def clean_and_fill_data(df):
         df['teacher_referred_count'] = df['teacher_referred_count'].fillna(0)
         print(f"Filled {missing_teacher_referred} missing values in 'teacher_referred_count' with 0.")
     
+    # change fully_funded to 0,1 binary
+    if 'fully_funded' in df.columns:
+        df[df['fully_funded'] == 't'] = 1
+        df[df['fully_funded'] == 'f'] = 0
+
     # Drop rows with any null values
     null_rows_count = df.isnull().sum().sum()
     df.dropna(inplace=True)

@@ -24,6 +24,9 @@
         "grade_level",
         "primary_focus_subject",
         "resource_type"
+    ],
+    "models": [
+        "random_forest"
     ]
 }
   
