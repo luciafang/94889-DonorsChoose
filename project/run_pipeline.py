@@ -22,6 +22,7 @@ def run_pipeline():
     clean_script = os.path.join(preprocessing_dir, "data_cleaning.py")
     split_script = os.path.join(split_dir, "data_train_test_split.py")
     model_script = os.path.join(model_dir, "model_training.py")
+    eval_script = os.path.join(model_dir, "model_evaluation.py")
 
     ############################
     # Run the merge script
@@ -41,6 +42,11 @@ def run_pipeline():
     # run model training
     print("Running model training...")
     subprocess.run(["python", model_script], cwd=model_dir, check=True)
+
+    ############################
+    # run model evaluation
+    print("Running model evaluation...")
+    subprocess.run(["python", eval_script], cwd=model_dir, check=True)
 
     print("Pipeline complete.")
     ############################

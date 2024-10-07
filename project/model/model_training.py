@@ -31,10 +31,12 @@ if __name__ == "__main__":
     x_test_path = "../outputs/x_test.csv"
 
     X_train = pd.read_csv(x_train_path)
-    y_train = pd.read_csv(y_train_path).squeeze().array
-    X_test = pd.read_csv(x_test_path)
+    X_train = X_train.set_index('projectid')
 
-    # print(y_train.squeeze().array)
+    y_train = pd.read_csv(y_train_path).squeeze().array
+    
+    X_test = pd.read_csv(x_test_path)
+    X_test = X_test.set_index("projectid")
 
     config = load_config()
     
