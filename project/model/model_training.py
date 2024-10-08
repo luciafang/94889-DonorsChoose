@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 from sklearn.ensemble import RandomForestClassifier
 import json
+import joblib
 
 def train_model(model_type, X_train, y_train, X_test):
     '''
@@ -17,6 +18,9 @@ def train_model(model_type, X_train, y_train, X_test):
 
     classifier.fit(X_train, y_train)
     y_pred = classifier.predict(X_test)
+
+    joblib.dump(classifier, "../outputs/" + model_type + ".pkl") 
+
     return y_pred
 
 def load_config(config_file="../config.json"):
