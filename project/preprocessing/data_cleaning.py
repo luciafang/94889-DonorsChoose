@@ -3,6 +3,19 @@ import json
 import numpy as np
 import os
 
+def get_school_metro(project, df_projects_metro_filled):
+  '''
+  project: row in projects with metro df
+  '''
+  new_proj = df_projects_metro_filled[df_projects_metro_filled["projectid"] == project["projectid"]]
+  return new_proj["school_metro_filled"].values[0]
+
+def load_config(config_file="../config.json"):
+    """Load configuration from a JSON file."""
+    with open(config_file, 'r') as file:
+        config = json.load(file)
+    return config
+
 def clean_and_fill_data(df):
     """
     Remove invalid entries from the DataFrame by checking for missing values,
@@ -21,11 +34,25 @@ def clean_and_fill_data(df):
     df.drop_duplicates(inplace=True)
     print(f"Dropped {duplicates_count} duplicate rows.")
 
-    # Fill missing values for 'teacher_referred_count' with 0
-    if 'teacher_referred_count' in df.columns:
-        missing_teacher_referred = df['teacher_referred_count'].isnull().sum()
-        df['teacher_referred_count'] = df['teacher_referred_count'].fillna(0)
-        print(f"Filled {missing_teacher_referred} missing values in 'teacher_referred_count' with 0.")
+    # Fill missing values with imputation
+    config = load_config()
+    
+    projects_imputation = config["projects_imputation"]
+    for imp in projects_imputation:
+        nulls = df[imp].isnull().sum()
+        if projects_imputation[imp] == "0":
+            
+            df[imp] = df[imp].fillna(0)
+            print(f"Filled {nulls} missing values in {imp} with 0.")
+        elif projects_imputation[imp] == "mean":
+            df[imp] = df[imp].fillna(df[imp].mean())
+            print(f"Filled {nulls} missing values in {imp} with mean.")
+        elif projects_imputation[imp] == "gpt":
+            selected_dataset_path = "../data/projects_with_metro_gpt.csv"
+            df_metro = pd.read_csv(selected_dataset_path)
+            df["school_metro"] = df.apply(lambda project: project["school_metro"] if isinstance(project["school_metro"], str) else get_school_metro(project, df_metro), axis=1)
+            
+            print(f"Filled {nulls} missing values in {imp} with estimate from ChatGPT.")
 
     # Drop rows with any null values
     null_rows_count = df.isnull().sum().sum()
@@ -101,7 +128,7 @@ if __name__ == "__main__":
 
     # Clean the dataset
     df_cleaned = clean_and_fill_data(df)
-    df_cleaned = remove_outliers(df_cleaned)
+    # df_cleaned = remove_outliers(df_cleaned)
 
     # One-hot encode specified categorical features
     df_cleaned = one_hot_encode(df_cleaned, config['one_hot_encode_features'])
