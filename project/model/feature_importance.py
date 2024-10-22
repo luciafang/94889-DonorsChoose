@@ -11,7 +11,7 @@ def load_config(config_file="../config.json"):
         config = json.load(file)
     return config
 
-def save_feature_importance_plot(classifier, X_train):
+def save_feature_importance_plot(classifier, X_train, model_type):
     importances = classifier.feature_importances_
 
     indices = np.argsort(importances)
@@ -24,7 +24,7 @@ def save_feature_importance_plot(classifier, X_train):
 
     plt.tight_layout()
     
-    fig.savefig('../figures/feature_importances.jpg')
+    fig.savefig("../figures/" + model_type + "_feature_importances.jpg")
 
 if __name__ == "__main__":
     x_train_path = "../outputs/x_train.csv"
@@ -34,6 +34,7 @@ if __name__ == "__main__":
     config = load_config()
     models = config["models"]
     for model_type in models:
-        classifier = joblib.load("../outputs/" + model_type + ".pkl")
-        save_feature_importance_plot(classifier, X_train)
+        if model_type != "logistic_regression":
+            classifier = joblib.load("../outputs/" + model_type + ".pkl")
+            save_feature_importance_plot(classifier, X_train, model_type)
     

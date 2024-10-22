@@ -2,6 +2,7 @@ import sklearn as sk
 import pandas as pd
 import numpy as np
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.linear_model import LogisticRegression
 import json
 import joblib
 
@@ -15,6 +16,9 @@ def train_model(model_type, X_train, y_train, X_test):
     if model_type == "random_forest":
         # random forest
         classifier = RandomForestClassifier()
+
+    if model_type == "logistic_regression":
+        classifier = LogisticRegression()
 
     classifier.fit(X_train, y_train)
     y_pred = classifier.predict(X_test)
@@ -50,9 +54,9 @@ if __name__ == "__main__":
     for model_type in models:
         y_pred[model_type] = train_model(model_type, X_train, y_train, X_test)
     
-    pred = pd.DataFrame.from_dict(y_pred)
-    
-    pred_path = "../outputs/pred.csv"
-    pred.to_csv(pred_path, index=False)
+        pred = pd.DataFrame.from_dict(y_pred)
+        
+        pred_path = "../outputs/pred.csv"
+        pred.to_csv(pred_path, index=False)
 
     print(f"Model training complete.")
