@@ -26,13 +26,16 @@
         "resource_type"
     ],
     "models": [
-        "random_forest",
-        "logistic_regression"
+        "random_forest"
     ],
     "projects_imputation": {
         "teacher_referred_count": "0",
         "students_reached": "mean",
-        "school_metro": "gpt"
+        "school_metro": "gpt",
+        "avg_donations_per_week": "0",
+        "avg_donations_per_month": "0",
+        "number_of_repeat_donors": "0",
+        "total_projects_in_city": "0"
     }    
 }
   
