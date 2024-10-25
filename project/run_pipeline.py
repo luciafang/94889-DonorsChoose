@@ -14,12 +14,14 @@ def run_pipeline():
 
     # Define the preprocessing directory
     preprocessing_dir = os.path.join(current_dir, "preprocessing")
+    feature_dir = os.path.join(current_dir, "features")
     split_dir = os.path.join(current_dir, "split")
     model_dir = os.path.join(current_dir, "model")
 
     # Define paths for the scripts
     merge_script = os.path.join(preprocessing_dir, "feature_selection.py")
     clean_script = os.path.join(preprocessing_dir, "data_cleaning.py")
+    feature_script = os.path.join(feature_dir, "feature_engineering.py")
     split_script = os.path.join(split_dir, "data_train_test_split.py")
     model_script = os.path.join(model_dir, "model_training.py")
     eval_script = os.path.join(model_dir, "model_evaluation.py")
@@ -30,6 +32,12 @@ def run_pipeline():
     print("Running dataset merging...")
     subprocess.run(["python", merge_script], cwd=preprocessing_dir, check=True)
 
+    ############################
+    # Run the feature script
+    print("Running feature engineering...")
+    subprocess.run(["python", feature_script], cwd=feature_dir, check=True)
+
+    ############################
     # Run the cleaning script
     print("Running data cleaning...")
     subprocess.run(["python", clean_script], cwd=preprocessing_dir, check=True)

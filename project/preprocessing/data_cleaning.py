@@ -121,7 +121,7 @@ def load_config(config_file="../config.json"):
 if __name__ == "__main__":
     config = load_config()
     
-    selected_dataset_path = "../outputs/selected_dataset.csv"
+    selected_dataset_path = "../outputs/selected_dataset_with_new_features.csv"
     df = pd.read_csv(selected_dataset_path)
     initial_row_count = df.shape[0]
     print(f"Initial number of rows: {initial_row_count}")
