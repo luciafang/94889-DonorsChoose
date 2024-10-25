@@ -10,17 +10,7 @@ def load_config(config_file="../config.json"):
         config = json.load(file)
     return config
 
-if __name__ == "__main__":
-    config = load_config()
-    models = config["models"]
-
-    
-    y_test_path = "../outputs/y_test.csv"
-    y_pred_path = "../outputs/pred.csv"
-    print(y_pred_path)
-
-    y_test = pd.read_csv(y_test_path)
-    y_pred = pd.read_csv(y_pred_path)
+def metrics(models, y_test, y_pred):
     for model_type in models:
         y_pred_model = y_pred[model_type]
         print(model_type)
@@ -47,5 +37,19 @@ if __name__ == "__main__":
         roc_display = RocCurveDisplay(fpr=fpr, tpr=tpr, roc_auc=roc_auc,
                                 estimator_name=model_type)
         roc_display.plot().figure_.savefig("../figures/" + model_type + "_roc.jpg")
+
+
+if __name__ == "__main__":
+    config = load_config()
+    models = config["models"]
+
+    
+    y_test_path = "../outputs/y_test.csv"
+    y_pred_path = "../outputs/pred.csv"
+
+    y_test = pd.read_csv(y_test_path)
+    y_pred = pd.read_csv(y_pred_path)
+
+    metrics(models, y_test, y_pred)
 
     print(f"Model evaluation complete.")
