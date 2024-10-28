@@ -68,19 +68,19 @@ def aggregate_donor(df_donations):
 if __name__ == "__main__":
     # Load data and config
     config = load_config()
-    donations_file = config["raw_datasets"]["donations"]
+    # donations_file = config["raw_datasets"]["donations"]
     projects_file = config["raw_datasets"]["projects"]
     cleaned_dataset_file = "../outputs/selected_dataset.csv"
     
-    df_donations = pd.read_csv(donations_file)
+    # df_donations = pd.read_csv(donations_file)
     df_projects = pd.read_csv(projects_file)
     df_cleaned = pd.read_csv(cleaned_dataset_file)
     
     # Temporal aggregation features
-    donations_weekly, donations_monthly = aggregate_temporal(df_donations)
+    # donations_weekly, donations_monthly = aggregate_temporal(df_donations)
 
     # Donor aggregation features
-    avg_donor_contribution, repeat_donors_count = aggregate_donor(df_donations)
+    # avg_donor_contribution, repeat_donors_count = aggregate_donor(df_donations)
 
     # Geographic aggregation features
     projects_by_city, projects_by_state = aggregate_geographic(df_projects)
