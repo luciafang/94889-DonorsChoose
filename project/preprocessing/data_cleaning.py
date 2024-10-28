@@ -47,12 +47,18 @@ def clean_and_fill_data(df):
         elif projects_imputation[imp] == "mean":
             df[imp] = df[imp].fillna(df[imp].mean())
             print(f"Filled {nulls} missing values in {imp} with mean.")
+        # removed school metro as a feature because we don't have all states/cities data
+        # no features are being imputed with "gpt"
         elif projects_imputation[imp] == "gpt":
             selected_dataset_path = "../data/projects_with_metro_gpt.csv"
             df_metro = pd.read_csv(selected_dataset_path)
             df["school_metro"] = df.apply(lambda project: project["school_metro"] if isinstance(project["school_metro"], str) else get_school_metro(project, df_metro), axis=1)
             
             print(f"Filled {nulls} missing values in {imp} with estimate from ChatGPT.")
+        # negative 1 fill for unknown fully_funded rows (anything that is 2014)
+        elif projects_imputation[imp] == "neg1":
+            df[imp] = df[imp].fillna(-1)
+            print(f"Filled {nulls} missing values in {imp} with -1.")
 
     # Drop rows with any null values
     null_rows_count = df.isnull().sum().sum()

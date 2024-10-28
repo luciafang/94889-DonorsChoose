@@ -52,10 +52,11 @@ def run_pipeline():
     print("Running model training...")
     subprocess.run(["python", model_script], cwd=model_dir, check=True)
 
-    ############################
-    # run model evaluation
-    print("Running model evaluation...")
-    subprocess.run(["python", eval_script], cwd=model_dir, check=True)
+    # TODO: Change the below to leave-one-out on training data
+    # ############################
+    # # run model evaluation
+    # print("Running model evaluation...")
+    # subprocess.run(["python", eval_script], cwd=model_dir, check=True)
 
     ############################
     # run feature importance

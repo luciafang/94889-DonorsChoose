@@ -84,12 +84,14 @@ if __name__ == "__main__":
 
     # Geographic aggregation features
     projects_by_city, projects_by_state = aggregate_geographic(df_projects)
-    
+
+    # removed these features because the test data (2014->) has no data for donations yet
+    # the reason why these are the only ones removed is because the classifier were heavily relying on them
     # Merge the new features into the cleaned dataset (on 'projectid')
-    df_cleaned = df_cleaned.merge(donations_weekly, on='projectid', how='left')
-    df_cleaned = df_cleaned.merge(donations_monthly, on='projectid', how='left')
-    df_cleaned = df_cleaned.merge(avg_donor_contribution, on='projectid', how='left')
-    df_cleaned = df_cleaned.merge(repeat_donors_count, on='projectid', how='left')
+    # df_cleaned = df_cleaned.merge(donations_weekly, on='projectid', how='left')
+    # df_cleaned = df_cleaned.merge(donations_monthly, on='projectid', how='left')
+    # df_cleaned = df_cleaned.merge(avg_donor_contribution, on='projectid', how='left')
+    # df_cleaned = df_cleaned.merge(repeat_donors_count, on='projectid', how='left')
     df_cleaned = df_cleaned.merge(projects_by_city, on='projectid', how='left')
     df_cleaned = df_cleaned.merge(projects_by_state, on='projectid', how='left')
     

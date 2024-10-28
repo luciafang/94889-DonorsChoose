@@ -1,10 +1,10 @@
 {
     "raw_datasets": {
-        "donations": "../data/sub_donations.csv",
-        "essays": "../data/sub_essays.csv",
-        "projects": "../data/sub_projects.csv",
-        "resources": "../data/sub_resources.csv",
-        "outcomes": "../data/sub_outcomes.csv"
+        "donations": "../data/donations.csv",
+        "essays": "../data/essays.csv",
+        "projects": "../data/projects.csv",
+        "resources": "../data/resources.csv",
+        "outcomes": "../data/outcomes.csv"
     },
     "dataset": "../outputs/cleaned_dataset.csv",
     "features_to_use": [
@@ -16,7 +16,8 @@
         "primary_focus_subject",
         "students_reached",
         "resource_type",
-        "fully_funded"
+        "fully_funded",
+        "date_posted"
     ],
     "one_hot_encode_features": [
         "poverty_level",
@@ -32,11 +33,14 @@
     "projects_imputation": {
         "teacher_referred_count": "0",
         "students_reached": "mean",
-        "school_metro": "gpt",
-        "avg_donations_per_week": "0",
-        "avg_donations_per_month": "0",
-        "number_of_repeat_donors": "0",
-        "total_projects_in_city": "0"
-    }    
+        "total_projects_in_city": "0",
+        "fully_funded": "neg1"
+    },
+    "poverty_columns": {
+        "low": "poverty_level_low poverty",
+        "moderate": "poverty_level_moderate poverty",
+        "high": "poverty_level_high poverty",
+        "highest": "poverty_level_highest poverty"
+    }
 
 }

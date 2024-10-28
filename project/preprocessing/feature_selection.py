@@ -32,6 +32,14 @@ def merge_datasets(donations_file, essays_file, projects_file, resources_file, o
     # donations = pd.read_csv(donations_file)
     # essays = pd.read_csv(essays_file)
     projects = pd.read_csv(projects_file, parse_dates=['date_posted'])
+
+    # move somewhere
+    # # find max date (05-11-2014) and remove any projects that was posted after (02-11-2014)
+    # # keeping projects that have been there for 3+ months
+    # max_date = projects['date_posted'].max()
+    # cutoff_date = max_date - pd.DateOffset(months=3)
+    # projects_not_recent = projects[projects['date_posted'] <= cutoff_date]
+    # print('Number of projects not recent: {}'.format(len(projects_not_recent)))
     # resources = pd.read_csv(resources_file)
     outcomes = pd.read_csv(outcomes_file)
 
