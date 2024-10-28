@@ -48,7 +48,10 @@ def train_model(model_type, X_train, y_train, X_test, pov_lvl):
     classifier.fit(X_train, y_train)
     y_pred = classifier.predict(X_test)
 
-    joblib.dump(classifier, "../outputs/" + model_type + f"_{pov_lvl}_poverty.pkl")
+    if pov_lvl != "none":
+        joblib.dump(classifier, "../outputs/" + model_type + f"_{pov_lvl}_poverty.pkl")
+    else:
+        joblib.dump(classifier, "../outputs/" + model_type + ".pkl")
 
     return y_pred
 
@@ -76,19 +79,33 @@ if __name__ == "__main__":
     
     models = config["models"]
 
-    # split by poverty type, refer to config
-    for pov_lvl, pov_col_name in config["poverty_columns"].items():
-        y_pred = {}
-        for model_type in models:
-            X_res, y_res, X_test_filt = smote_balancing(X_train, y_train, X_test, pov_col_name, config)
-            x_res_path = f"../outputs/x_res_{pov_lvl}_poverty.csv"
-            y_res_path = f"../outputs/y_res_{pov_lvl}_poverty.csv"
-            X_res.to_csv(x_res_path, index=False)
-            pd.DataFrame(y_res).to_csv(y_res_path, index=False)
-            y_pred[model_type] = train_model(model_type, X_res, y_res, X_test_filt, pov_lvl)
-            pred = pd.DataFrame.from_dict(y_pred)
+    split_by_poverty = config["split_by_poverty"]
 
-            pred_path = f"../outputs/pred_{pov_lvl}_poverty.csv"
-            pred.to_csv(pred_path, index=False)
+    # split by poverty type, refer to config
+    if split_by_poverty == "true":
+        for pov_lvl, pov_col_name in config["poverty_columns"].items():
+            y_pred = {}
+            for model_type in models:
+                X_res, y_res, X_test_filt = smote_balancing(X_train, y_train, X_test, pov_col_name, config)
+                x_res_path = f"../outputs/x_res_{pov_lvl}_poverty.csv"
+                y_res_path = f"../outputs/y_res_{pov_lvl}_poverty.csv"
+                X_res.to_csv(x_res_path, index=False)
+                pd.DataFrame(y_res).to_csv(y_res_path, index=False)
+                y_pred[model_type] = train_model(model_type, X_res, y_res, X_test_filt, pov_lvl)
+                pred = pd.DataFrame.from_dict(y_pred)
+
+                pred_path = f"../outputs/pred_{pov_lvl}_poverty.csv"
+                pred.to_csv(pred_path, index=False)
+
+    # create one model of each type that includes all poverty levels as reference
+    y_pred = {}
+    pov_lvl = "none"
+    for model_type in models:
+        y_pred[model_type] = train_model(model_type, X_train, y_train, X_test, pov_lvl)
+    
+        pred = pd.DataFrame.from_dict(y_pred)
+        
+        pred_path = "../outputs/pred.csv"
+        pred.to_csv(pred_path, index=False)
 
     print(f"Model training complete.")

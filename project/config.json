@@ -41,6 +41,7 @@
         "moderate": "poverty_level_moderate poverty",
         "high": "poverty_level_high poverty",
         "highest": "poverty_level_highest poverty"
-    }
+    },
+    "split_by_poverty": "false"
 
 }
