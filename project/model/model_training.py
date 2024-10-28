@@ -40,10 +40,10 @@ def train_model(model_type, X_train, y_train, X_test, pov_lvl):
     '''
     if model_type == "random_forest":
         # random forest
-        classifier = RandomForestClassifier()
+        classifier = RandomForestClassifier(random_state=42)
 
     if model_type == "logistic_regression":
-        classifier = LogisticRegression()
+        classifier = LogisticRegression(random_state=42)
 
     classifier.fit(X_train, y_train)
     y_pred = classifier.predict(X_test)
