@@ -29,23 +29,23 @@ def run_pipeline():
 
     ############################
     # Run the merge script
-    # print("Running dataset merging...")
-    # subprocess.run(["python", merge_script], cwd=preprocessing_dir, check=True)
+    print("Running dataset merging...")
+    subprocess.run(["python", merge_script], cwd=preprocessing_dir, check=True)
 
     ############################
     # Run the feature script
-    # print("Running feature engineering...")
-    # subprocess.run(["python", feature_script], cwd=feature_dir, check=True)
+    print("Running feature engineering...")
+    subprocess.run(["python", feature_script], cwd=feature_dir, check=True)
 
     ############################
     # Run the cleaning script
-    # print("Running data cleaning...")
-    # subprocess.run(["python", clean_script], cwd=preprocessing_dir, check=True)
+    print("Running data cleaning...")
+    subprocess.run(["python", clean_script], cwd=preprocessing_dir, check=True)
 
     ############################
     # run train test split
-    # print("Running train test split...")
-    # subprocess.run(["python", split_script], cwd=split_dir, check=True)
+    print("Running train test split...")
+    subprocess.run(["python", split_script], cwd=split_dir, check=True)
 
     ############################
     # run model training
