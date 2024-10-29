@@ -94,8 +94,8 @@ if __name__ == "__main__":
             y_train, y_test = y.iloc[train_index], y.iloc[test_index]
 
             y_pred = train_model(model_type, X_train, y_train, X_test, pov_lvl)
-            model_preds[i] = y_pred
-            model_true_values[i] = y_test
+            model_preds[str(i)] = y_pred
+            model_true_values[str(i)] = y_test.values
             i += 1
         model_preds_df = pd.DataFrame.from_dict(model_preds)
         model_true_values_df = pd.DataFrame.from_dict(model_true_values)
@@ -121,8 +121,8 @@ if __name__ == "__main__":
                     X_res, y_res, X_test_filt = smote_balancing(X_train, y_train, X_test, pov_col_name, config)
 
                     y_pred = train_model(model_type, X_res, y_res, X_test_filt, pov_lvl)
-                    model_preds[i] = y_pred
-                    model_true_values[i] = y_test
+                    model_preds[str(i)] = y_pred
+                    model_true_values[str(i)] = y_test
                     i += 1
                 model_preds_df = pd.DataFrame.from_dict(model_preds)
                 model_true_values_df = pd.DataFrame.from_dict(model_true_values)

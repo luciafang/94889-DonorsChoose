@@ -11,7 +11,7 @@ def load_config(config_file="../config.json"):
         config = json.load(file)
     return config
 
-def save_feature_importance_plot(classifier, X_train, model_type, pov_lvl):
+def save_feature_importance_plot(classifier, X, model_type, pov_lvl):
     importances = classifier.feature_importances_
 
     indices = np.argsort(importances)
@@ -20,7 +20,7 @@ def save_feature_importance_plot(classifier, X_train, model_type, pov_lvl):
     ax.barh(range(len(importances)), importances[indices])
     ax.set_yticks(range(len(importances)))
 
-    _ = ax.set_yticklabels(np.array(X_train.columns)[indices])
+    _ = ax.set_yticklabels(np.array(X.columns)[indices])
 
     plt.tight_layout()
 
@@ -50,29 +50,28 @@ if __name__ == "__main__":
     config = load_config()
     models = config["models"]
     split_by_poverty = config["split_by_poverty"]
+
+    df_path = "../outputs/train_test_df.csv"
+    df = pd.read_csv(df_path)
+    df = df.set_index('projectid')
+    X = df.drop('fully_funded', axis=1)
     if split_by_poverty == "true":
         for pov_lvl, pov_col_name in config["poverty_columns"].items():
-            x_train_path = f"../outputs/x_res_{pov_lvl}_poverty.csv"
-            X_train = pd.read_csv(x_train_path)
             # X_res already removed projectid column thus removing it
             # X_train = X_train.set_index('projectid')
             for model_type in models:
                 classifier = joblib.load("../outputs/" + model_type + f"_{pov_lvl}_poverty.pkl")
                 if model_type == "random_forest":
-                    save_feature_importance_plot(classifier, X_train, model_type, pov_lvl)
+                    save_feature_importance_plot(classifier, X, model_type, pov_lvl)
                 if model_type == "logistic_regression":
-                    save_cofficient_plot(classifier, X_train, model_type, pov_lvl)
+                    save_cofficient_plot(classifier, X, model_type, pov_lvl)
     
     # for model with all poverty levels
-    x_train_path = "../outputs/x_train.csv"
-    X_train = pd.read_csv(x_train_path)
-    X_train = X_train.set_index('projectid')
-
     models = config["models"]
     pov_lvl = "none"
     for model_type in models:
         classifier = joblib.load("../outputs/" + model_type + ".pkl")
         if model_type == "random_forest":
-            save_feature_importance_plot(classifier, X_train, model_type, pov_lvl)
+            save_feature_importance_plot(classifier, X, model_type, pov_lvl)
         if model_type == "logistic_regression":
-            save_cofficient_plot(classifier, X_train, model_type, pov_lvl)
+            save_cofficient_plot(classifier, X, model_type, pov_lvl)

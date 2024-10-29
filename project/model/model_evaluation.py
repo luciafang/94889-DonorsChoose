@@ -3,6 +3,7 @@ from sklearn.metrics import accuracy_score, precision_score, recall_score, Preci
 import pandas as pd
 import matplotlib.pyplot as plt
 import json
+import numpy as np
 
 def load_config(config_file="../config.json"):
     """Load configuration from a JSON file."""
@@ -10,46 +11,61 @@ def load_config(config_file="../config.json"):
         config = json.load(file)
     return config
 
-def metrics(models, y_test, y_pred):
-    for model_type in models:
-        y_pred_model = y_pred[model_type]
-        print(model_type)
+def metrics(y_test, y_pred, model_type):
+    num_splits = y_test.shape[1]
+    metrics = {}
+    all_acc = []
+    all_prec = []
+    all_rec = []
+    all_fpr = []
+    all_tpr = []
+    all_auc = []
 
-        accuracy = accuracy_score(y_test, y_pred_model)
-        print("Accuracy:", accuracy)
+    for i in range(num_splits):
+        y_test_i = y_test[str(i)]
+        y_pred_i = y_pred[str(i)]
 
-        precision = precision_score(y_test, y_pred_model)
-        print("Precision:", precision)
+        accuracy_i = accuracy_score(y_test_i, y_pred_i)
+        precision_i = precision_score(y_test_i, y_pred_i)
+        recall_i = recall_score(y_test_i, y_pred_i)
 
-        recall = recall_score(y_test, y_pred_model)
-        print("Recall:", recall)
+        all_acc.append(accuracy_i)
+        all_prec.append(precision_i)
+        all_rec.append(recall_i)
 
-        pr_display = PrecisionRecallDisplay.from_predictions(
-            y_test, y_pred_model, name="model_type"
-        )
-
-        pr_display.ax_.set_title(model_type + "2-class Precision-Recall curve")
-
-        pr_display.figure_.savefig("../figures/" + model_type + "_precision_recall.jpg")
-
-        fpr, tpr, thresholds = roc_curve(y_test, y_pred_model)
+        fpr, tpr, thresholds = roc_curve(y_test_i, y_pred_i)
         roc_auc = auc(fpr, tpr)
-        roc_display = RocCurveDisplay(fpr=fpr, tpr=tpr, roc_auc=roc_auc,
-                                estimator_name=model_type)
-        roc_display.plot().figure_.savefig("../figures/" + model_type + "_roc.jpg")
+
+        all_fpr.append(fpr)
+        all_tpr.append(tpr)
+        all_auc.append(roc_auc)
+
+        # Plot ROC curve for this fold
+        plt.plot(fpr, tpr)
+
+    plt.savefig("../figures/" + model_type + "_roc.jpg")
+
+    metrics["accuracy"] = all_acc
+    metrics["precision"] = all_prec
+    metrics["recall"] = all_rec
+
+    print("Avg Accuracy:", np.mean(all_acc))
+    print("Avg Precision:", np.mean(all_prec))
+    print("Avg Recall:", np.mean(all_rec))
 
 
 if __name__ == "__main__":
     config = load_config()
     models = config["models"]
 
-    
-    y_test_path = "../outputs/y_test.csv"
-    y_pred_path = "../outputs/pred.csv"
+    for model_type in models:
+        y_test_path = "../outputs/" + model_type + "_true_vals.csv"
+        y_pred_path = "../outputs/" + model_type + "_pred.csv"
 
-    y_test = pd.read_csv(y_test_path)
-    y_pred = pd.read_csv(y_pred_path)
+        y_test = pd.read_csv(y_test_path)
+        y_pred = pd.read_csv(y_pred_path)
 
-    metrics(models, y_test, y_pred)
+        print(model_type)
+        metrics(y_test, y_pred, model_type)
 
     print(f"Model evaluation complete.")
