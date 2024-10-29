@@ -22,7 +22,7 @@ def run_pipeline():
     merge_script = os.path.join(preprocessing_dir, "feature_selection.py")
     clean_script = os.path.join(preprocessing_dir, "data_cleaning.py")
     feature_script = os.path.join(feature_dir, "feature_engineering.py")
-    split_script = os.path.join(split_dir, "data_train_test_split.py")
+    split_script = os.path.join(split_dir, "train_test_future_data_split.py")
     model_script = os.path.join(model_dir, "model_training.py")
     eval_script = os.path.join(model_dir, "model_evaluation.py")
     importance_script = os.path.join(model_dir, "feature_importance.py")
@@ -43,8 +43,8 @@ def run_pipeline():
     subprocess.run(["python", clean_script], cwd=preprocessing_dir, check=True)
 
     ############################
-    # run train test split
-    print("Running train test split...")
+    # run train/test and future data split
+    print("Running train/test and future data split...")
     subprocess.run(["python", split_script], cwd=split_dir, check=True)
 
     ############################
