@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
+from sklearn.model_selection import TimeSeriesSplit
 import json
 import joblib
 from imblearn.over_sampling import SMOTE
@@ -67,45 +68,69 @@ if __name__ == "__main__":
     y_train_path = "../outputs/y_train.csv"
     x_test_path = "../outputs/x_test.csv"
 
-    X_train = pd.read_csv(x_train_path)
-    X_train = X_train.set_index('projectid')
-
-    y_train = pd.read_csv(y_train_path).squeeze().array
-    
-    X_test = pd.read_csv(x_test_path)
-    X_test = X_test.set_index("projectid")
+    train_test_path = "../outputs/train_test_df.csv"
+    train_test_df = pd.read_csv(train_test_path)
+    train_test_df = train_test_df.set_index('projectid')
 
     config = load_config()
-    
     models = config["models"]
-
     split_by_poverty = config["split_by_poverty"]
+
+    # already sorted by date
+    X = train_test_df.drop('fully_funded', axis=1)
+    y = train_test_df['fully_funded']
+
+    tscv = TimeSeriesSplit(n_splits=5)
+
+    pov_lvl = "none"
+    # Perform cross-validation using time series split
+    # create one model of each type that includes all poverty levels as reference
+    for model_type in models:
+        i = 0
+        model_preds = {}
+        model_true_values = {}
+        for train_index, test_index in tscv.split(X):
+            X_train, X_test = X.iloc[train_index], X.iloc[test_index]
+            y_train, y_test = y.iloc[train_index], y.iloc[test_index]
+
+            y_pred = train_model(model_type, X_train, y_train, X_test, pov_lvl)
+            model_preds[i] = y_pred
+            model_true_values[i] = y_test
+            i += 1
+        model_preds_df = pd.DataFrame.from_dict(model_preds)
+        model_true_values_df = pd.DataFrame.from_dict(model_true_values)
+
+        pred_path = "../outputs/" + model_type + "_pred.csv"
+        true_path = "../outputs/" + model_type + "_true_vals.csv"
+
+        model_preds_df.to_csv(pred_path, index=False)
+        model_true_values_df.to_csv(true_path, index=False)
 
     # split by poverty type, refer to config
     if split_by_poverty == "true":
         for pov_lvl, pov_col_name in config["poverty_columns"].items():
-            y_pred = {}
             for model_type in models:
-                X_res, y_res, X_test_filt = smote_balancing(X_train, y_train, X_test, pov_col_name, config)
-                x_res_path = f"../outputs/x_res_{pov_lvl}_poverty.csv"
-                y_res_path = f"../outputs/y_res_{pov_lvl}_poverty.csv"
-                X_res.to_csv(x_res_path, index=False)
-                pd.DataFrame(y_res).to_csv(y_res_path, index=False)
-                y_pred[model_type] = train_model(model_type, X_res, y_res, X_test_filt, pov_lvl)
-                pred = pd.DataFrame.from_dict(y_pred)
+                i = 0
+                model_preds = {}
+                model_true_values = {}
+                for train_index, test_index in tscv.split(X):
+                    X_train, X_test = X.iloc[train_index], X.iloc[test_index]
+                    y_train, y_test = y.iloc[train_index], y.iloc[test_index]
+                    # this does not work because smote balancing messes with the number of train/test and there should be the same number in each split
+                    # maybe smote balancing should be done earlier?
+                    X_res, y_res, X_test_filt = smote_balancing(X_train, y_train, X_test, pov_col_name, config)
 
-                pred_path = f"../outputs/pred_{pov_lvl}_poverty.csv"
-                pred.to_csv(pred_path, index=False)
+                    y_pred = train_model(model_type, X_res, y_res, X_test_filt, pov_lvl)
+                    model_preds[i] = y_pred
+                    model_true_values[i] = y_test
+                    i += 1
+                model_preds_df = pd.DataFrame.from_dict(model_preds)
+                model_true_values_df = pd.DataFrame.from_dict(model_true_values)
 
-    # create one model of each type that includes all poverty levels as reference
-    y_pred = {}
-    pov_lvl = "none"
-    for model_type in models:
-        y_pred[model_type] = train_model(model_type, X_train, y_train, X_test, pov_lvl)
-    
-        pred = pd.DataFrame.from_dict(y_pred)
-        
-        pred_path = "../outputs/pred.csv"
-        pred.to_csv(pred_path, index=False)
+                pred_path = "../outputs/" + model_type + "_" + pov_lvl + "_pred.csv"
+                true_path = "../outputs/" + model_type + "_" + pov_lvl + "_true_vals.csv"
+
+                model_preds_df.to_csv(pred_path, index=False)
+                model_true_values_df.to_csv(true_path, index=False)
 
     print(f"Model training complete.")
