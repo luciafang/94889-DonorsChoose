@@ -6,14 +6,17 @@ import json
 import joblib
 import numpy as np
 
-def load_config(config_file="../config.json"):
+def load_config(config_file="project/config.json"):
     """Load configuration from a JSON file."""
     with open(config_file, 'r') as file:
         config = json.load(file)
     return config
 
-def metrics(y_test, y_pred, model_type):
+def metrics(y_test, y_pred, y_pred_probs, model_type):
+    # pr at k
+    pre_rec(y_test, y_pred_probs, model_type, k_inc=0.01)
     num_splits = y_test.shape[1]
+
     metrics = {}
     all_acc = []
     all_prec = []
@@ -25,6 +28,7 @@ def metrics(y_test, y_pred, model_type):
     for i in range(num_splits):
         y_test_i = y_test[str(i)]
         y_pred_i = y_pred[str(i)]
+        y_pred_prob_i = y_pred_probs[str(i)]
 
         accuracy_i = accuracy_score(y_test_i, y_pred_i)
         precision_i = precision_score(y_test_i, y_pred_i)
@@ -42,9 +46,13 @@ def metrics(y_test, y_pred, model_type):
         all_auc.append(roc_auc)
 
         # Plot ROC curve for this fold
-        plt.plot(fpr, tpr)
-
-    plt.savefig("../figures/" + model_type + "_roc.jpg")
+        plt.plot(fpr, tpr, label=f'Fold {i} (AUC = {roc_auc:.2f})')
+    plt.xlabel('False Positive Rate')
+    plt.ylabel('True Positive Rate')
+    plt.title(f"{model_type} ROC Curve with Time Series Cross-Validation")
+    plt.legend(loc='lower right')
+    plt.savefig("project/figures/" + model_type + "_roc.jpg")
+    plt.clf() 
 
     metrics["accuracy"] = all_acc
     metrics["precision"] = all_prec
@@ -54,72 +62,93 @@ def metrics(y_test, y_pred, model_type):
     print("Avg Precision:", np.mean(all_prec))
     print("Avg Recall:", np.mean(all_rec))
 
-    # classifier = joblib.load("../outputs/" + model_type + ".pkl")
-    # pr_at_k(classifier, X_test, y_test, model_type)
+#Find precision and recall (true values, scores, k_increase)
+def pre_rec(y_test, y_pred_prob, model_type, k_inc=0.01):
+    num_splits = y_test.shape[1]
+    # somehow attach test to probabilities for each fold
+    sorted_true_values = {}
+    for i in range(num_splits):
+        y_test_i = y_test[str(i)]
+        y_pred_i = y_pred_prob[str(i)]
 
-def pr_at_k(classifier, X_test, y_test, model_type):
-    X_test = X_test.set_index("projectid")
-    probabilities = classifier.predict_proba(X_test)
+        fold_i = {"true_vals": y_test_i, "probs": y_pred_i}
+        fold_i_df = pd.DataFrame.from_dict(fold_i)
+        fold_i_df = fold_i_df.sort_values(by='probs', ascending=False)
+        sorted_true_values[i] = fold_i_df["true_vals"]
 
-    X_test["pred_prob"] = probabilities[:, 1]
-    X_test["true_values"] = y_test.values
+    sorted_true_values = pd.DataFrame.from_dict(sorted_true_values)
+    # print(sorted_true_values)
+    # for each fold, calculate avg precision and recalls
 
-    probs_df = X_test[["pred_prob", "true_values"]]
-    probs_df = probs_df.sort_values(by='pred_prob', ascending=False)
+    # Define percentages of top k predictions (from top 1% to top 100%, increasing by k%)
+    percentages_k = np.arange(k_inc, (1.0+k_inc), k_inc)
 
-    precisions = []
-    recalls = []
-    true_values = probs_df["true_values"].values
-
-    total_true = sum(true_values)
-    for i in range(1, len(true_values)+1):
-        # precision = sum of trues/count so far
-        precision = sum(true_values[:i])/i
-        precisions.append(precision)
-        # recall = sum of trues/total number of actual trues
-        recall = sum(true_values[:i])/total_true
-        recalls.append(recall)
+    # Lists to store precision and recall for each k%
+    precision_k = []
+    recall_k = []
     
-    # make plot with two y axes
-    # Create a figure and axis
+    # Calculate precision and recall for each k%
+    for perc in percentages_k:
+        top_k = int(perc * len(sorted_true_values))
+        y_true_k = sorted_true_values.iloc[:top_k]
+
+        # Calculate avg precision and recall for top k%
+        actual_positives = np.sum(sorted_true_values)
+        predicted_positives = top_k
+        pre_k = []
+        rec_k = []
+        for i in range(num_splits):
+            true_positives = np.sum(y_true_k.iloc[:, i])
+
+            
+            pre_k_i = float(true_positives / predicted_positives) if predicted_positives > 0 else 0
+            rec_k_i = float(true_positives / actual_positives[i]) if actual_positives[i] > 0 else 0
+
+            pre_k.append(pre_k_i)
+            rec_k.append(rec_k_i)
+        
+        precision_k.append(np.average(pre_k))
+        recall_k.append(np.average(rec_k))
+
+    #Plot 
     fig, ax1 = plt.subplots()
 
-    k = np.arange(len(true_values))
+    # Plotting the Recall on the primary y-axis
+    ax1.plot(percentages_k*100, recall_k, 'g-', label='Recall')  # 'g-' means green solid line
+    ax1.set_xlabel('Threshold')
+    ax1.set_ylabel('Recall', color='g')
+    ax1.tick_params(axis='y', labelcolor='g')  # Change the color of the ticks to match the line
+    ax1.legend(loc='upper right')  # Add legend for the primary axis
 
-    # Plot the precision
-    ax1.plot(k, precisions, 'g-', label='Precision')  # Green line for precision
-    ax1.set_xlabel('k')
-    ax1.set_ylabel('Precision', color='g')
-    ax1.tick_params(axis='y', labelcolor='g')
+    # Create a second y-axis and plot the precision
+    ax2 = ax1.twinx()  # Instantiate a second axes that shares the same x-axis
+    ax2.plot(percentages_k*100, precision_k, 'b-', label='Precision')  # 'b-' means blue solid line
+    ax2.set_ylabel('Precision', color='b')
+    ax2.tick_params(axis='y', labelcolor='b')  # Change the color of the ticks to match the line
+    ax2.legend(loc='lower right')  # Add legend for the secondary axis
 
-    # Create a second y-axis
-    ax2 = ax1.twinx()
-    ax2.plot(k, recalls, 'b-', label='Recall')  # Blue line for recall
-    ax2.set_ylabel('Recall', color='b')
-    ax2.tick_params(axis='y', labelcolor='b')
+    # Show the plot
+    plt.title('PR-k curve')
+    plt.savefig("project/figures/" + model_type + "_pr_k_plot.jpg")
+    plt.show()
 
-    # Add a title and a legend
-    plt.title('Precision and Recall vs. Threshold')
-    fig.tight_layout()  # To make sure the layout is neat
-    ax1.legend(loc='upper left')
-    ax2.legend(loc='upper right')
 
-    # Save the plot
-    plt.savefig("../figures/" + model_type + "_pr_k_plot.jpg")
-
+    # return (precision_k, recall_k)
 
 if __name__ == "__main__":
     config = load_config()
     models = config["models"]
 
     for model_type in models:
-        y_test_path = "../outputs/" + model_type + "_true_vals.csv"
-        y_pred_path = "../outputs/" + model_type + "_pred.csv"
+        y_test_path = "project/outputs/" + model_type + "_true_vals.csv"
+        y_pred_prob_path = "project/outputs/" + model_type + "_pred_probs.csv"
+        y_pred_path = "project/outputs/" + model_type + "_pred.csv"
 
         y_test = pd.read_csv(y_test_path)
         y_pred = pd.read_csv(y_pred_path)
+        y_pred_probs = pd.read_csv(y_pred_prob_path)
 
         print(model_type)
-        metrics(y_test, y_pred, model_type)
+        metrics(y_test, y_pred, y_pred_probs, model_type)
 
         print(f"Model evaluation complete.")

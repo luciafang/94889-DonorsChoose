@@ -48,13 +48,14 @@ def train_model(model_type, X_train, y_train, X_test, pov_lvl):
 
     classifier.fit(X_train, y_train)
     y_pred = classifier.predict(X_test)
+    y_pred_probs = classifier.predict_proba(X_test)[:, 1]
 
     if pov_lvl != "none":
         joblib.dump(classifier, "../outputs/" + model_type + f"_{pov_lvl}_poverty.pkl")
     else:
         joblib.dump(classifier, "../outputs/" + model_type + ".pkl")
 
-    return y_pred
+    return y_pred, y_pred_probs
 
 
 def load_config(config_file="../config.json"):
@@ -88,22 +89,27 @@ if __name__ == "__main__":
     for model_type in models:
         i = 0
         model_preds = {}
+        model_pred_probs = {}
         model_true_values = {}
         for train_index, test_index in tscv.split(X):
             X_train, X_test = X.iloc[train_index], X.iloc[test_index]
             y_train, y_test = y.iloc[train_index], y.iloc[test_index]
 
-            y_pred = train_model(model_type, X_train, y_train, X_test, pov_lvl)
+            y_pred, y_pred_probs = train_model(model_type, X_train, y_train, X_test, pov_lvl)
             model_preds[str(i)] = y_pred
+            model_pred_probs[str(i)] = y_pred_probs
             model_true_values[str(i)] = y_test.values
             i += 1
         model_preds_df = pd.DataFrame.from_dict(model_preds)
+        model_pred_probs_df = pd.DataFrame.from_dict(model_pred_probs)
         model_true_values_df = pd.DataFrame.from_dict(model_true_values)
 
         pred_path = "../outputs/" + model_type + "_pred.csv"
+        pred_prob_path = "../outputs/" + model_type + "_pred_probs.csv"
         true_path = "../outputs/" + model_type + "_true_vals.csv"
 
         model_preds_df.to_csv(pred_path, index=False)
+        model_pred_probs_df.to_csv(pred_prob_path, index=False)
         model_true_values_df.to_csv(true_path, index=False)
 
     # split by poverty type, refer to config
@@ -113,6 +119,7 @@ if __name__ == "__main__":
                 i = 0
                 model_preds = {}
                 model_true_values = {}
+                model_true_values = {}
                 for train_index, test_index in tscv.split(X):
                     X_train, X_test = X.iloc[train_index], X.iloc[test_index]
                     y_train, y_test = y.iloc[train_index], y.iloc[test_index]
@@ -120,17 +127,21 @@ if __name__ == "__main__":
                     # maybe smote balancing should be done earlier?
                     X_res, y_res, X_test_filt = smote_balancing(X_train, y_train, X_test, pov_col_name, config)
 
-                    y_pred = train_model(model_type, X_res, y_res, X_test_filt, pov_lvl)
+                    y_pred, y_pred_probs = train_model(model_type, X_res, y_res, X_test_filt, pov_lvl)
                     model_preds[str(i)] = y_pred
+                    model_pred_probs[str(i)] = y_pred_probs
                     model_true_values[str(i)] = y_test
                     i += 1
                 model_preds_df = pd.DataFrame.from_dict(model_preds)
+                model_pred_probs_df = pd.DataFrame.from_dict(model_pred_probs)
                 model_true_values_df = pd.DataFrame.from_dict(model_true_values)
 
                 pred_path = "../outputs/" + model_type + "_" + pov_lvl + "_pred.csv"
+                pred_prob_path = "../outputs/" + model_type + "_pred_probs.csv"
                 true_path = "../outputs/" + model_type + "_" + pov_lvl + "_true_vals.csv"
 
                 model_preds_df.to_csv(pred_path, index=False)
+                model_pred_probs_df.to_csv(pred_prob_path, index=False)
                 model_true_values_df.to_csv(true_path, index=False)
 
     print(f"Model training complete.")
