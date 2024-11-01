@@ -6,7 +6,7 @@ import json
 import joblib
 import numpy as np
 
-def load_config(config_file="project/config.json"):
+def load_config(config_file="../config.json"):
     """Load configuration from a JSON file."""
     with open(config_file, 'r') as file:
         config = json.load(file)
@@ -51,7 +51,7 @@ def metrics(y_test, y_pred, y_pred_probs, model_type):
     plt.ylabel('True Positive Rate')
     plt.title(f"{model_type} ROC Curve with Time Series Cross-Validation")
     plt.legend(loc='lower right')
-    plt.savefig("project/figures/" + model_type + "_roc.jpg")
+    plt.savefig("../figures/" + model_type + "_roc.jpg")
     plt.clf() 
 
     metrics["accuracy"] = all_acc
@@ -93,12 +93,12 @@ def pre_rec(y_test, y_pred_prob, model_type, k_inc=0.01):
         y_true_k = sorted_true_values.iloc[:top_k]
 
         # Calculate avg precision and recall for top k%
-        actual_positives = np.sum(sorted_true_values)
+        actual_positives = np.sum(sorted_true_values, axis=0)
         predicted_positives = top_k
         pre_k = []
         rec_k = []
         for i in range(num_splits):
-            true_positives = np.sum(y_true_k.iloc[:, i])
+            true_positives = np.sum(y_true_k.iloc[:, i], axis=0)
 
             
             pre_k_i = float(true_positives / predicted_positives) if predicted_positives > 0 else 0
@@ -127,10 +127,9 @@ def pre_rec(y_test, y_pred_prob, model_type, k_inc=0.01):
     ax2.tick_params(axis='y', labelcolor='b')  # Change the color of the ticks to match the line
     ax2.legend(loc='lower right')  # Add legend for the secondary axis
 
-    # Show the plot
+    # Save the plot
     plt.title('PR-k curve')
-    plt.savefig("project/figures/" + model_type + "_pr_k_plot.jpg")
-    plt.show()
+    plt.savefig("../figures/" + model_type + "_pr_k_plot.jpg")
 
 
     # return (precision_k, recall_k)
@@ -139,10 +138,13 @@ if __name__ == "__main__":
     config = load_config()
     models = config["models"]
 
+    split_by_poverty = config["split_by_poverty"]
+
     for model_type in models:
-        y_test_path = "project/outputs/" + model_type + "_true_vals.csv"
-        y_pred_prob_path = "project/outputs/" + model_type + "_pred_probs.csv"
-        y_pred_path = "project/outputs/" + model_type + "_pred.csv"
+        pov_lvl = "none"
+        y_pred_path = "../outputs/" + model_type + f"_{pov_lvl}_pred.csv"
+        y_pred_prob_path = "../outputs/" + model_type + f"_{pov_lvl}_pred_probs.csv"
+        y_test_path = "../outputs/" + model_type + f"_{pov_lvl}_true_vals.csv"
 
         y_test = pd.read_csv(y_test_path)
         y_pred = pd.read_csv(y_pred_path)
@@ -150,5 +152,16 @@ if __name__ == "__main__":
 
         print(model_type)
         metrics(y_test, y_pred, y_pred_probs, model_type)
+        if split_by_poverty == "true":
+            for pov_lvl, pov_col_name in config["poverty_columns"].items():
+                print(pov_col_name)
+                y_pred_path = "../outputs/" + model_type + f"_{pov_lvl}_pred.csv"
+                y_pred_prob_path = "../outputs/" + model_type + f"_{pov_lvl}_pred_probs.csv"
+                y_test_path = "../outputs/" + model_type + f"_{pov_lvl}_true_vals.csv"
+
+                y_test = pd.read_csv(y_test_path)
+                y_pred = pd.read_csv(y_pred_path)
+                y_pred_probs = pd.read_csv(y_pred_prob_path)
+                metrics(y_test, y_pred, y_pred_probs, model_type)
 
         print(f"Model evaluation complete.")
