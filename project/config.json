@@ -42,5 +42,9 @@
         "high": "poverty_level_high poverty",
         "highest": "poverty_level_highest poverty"
     },
-    "split_by_poverty": "false"
+    "split_by_poverty": "false",
+    "test_splits": {
+        "drop": "2014",
+        "test": "2013"
+    }
 }
