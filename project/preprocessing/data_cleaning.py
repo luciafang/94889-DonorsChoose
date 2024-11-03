@@ -118,12 +118,6 @@ def one_hot_encode(df, categorical_features):
     df_encoded = pd.get_dummies(df, columns=categorical_features)
     return df_encoded
 
-# Load configuration from JSON
-def load_config(config_file="../config.json"):
-    with open(config_file, 'r') as file:
-        config = json.load(file)
-    return config
-
 if __name__ == "__main__":
     config = load_config()
     

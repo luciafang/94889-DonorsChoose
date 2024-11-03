@@ -51,10 +51,10 @@ if __name__ == "__main__":
     models = config["models"]
     split_by_poverty = config["split_by_poverty"]
 
-    df_path = "../outputs/train_test_df.csv"
+    df_path = "../outputs/train_df.csv"
     df = pd.read_csv(df_path)
     df = df.set_index('projectid')
-    X = df.drop('fully_funded', axis=1)
+    X = df.drop(['fully_funded', 'date_posted'], axis=1)
     if split_by_poverty == "true":
         for pov_lvl, pov_col_name in config["poverty_columns"].items():
             # X_res already removed projectid column thus removing it
@@ -70,7 +70,7 @@ if __name__ == "__main__":
     models = config["models"]
     pov_lvl = "none"
     for model_type in models:
-        classifier = joblib.load("../outputs/" + model_type + ".pkl")
+        classifier = joblib.load("../outputs/" + model_type + f"_{pov_lvl}_poverty.pkl")
         if model_type == "random_forest":
             save_feature_importance_plot(classifier, X, model_type, pov_lvl)
         if model_type == "logistic_regression":
