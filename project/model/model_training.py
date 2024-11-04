@@ -25,8 +25,12 @@ def evaluate_fold(y_test, y_pred):
 def cross_validate(df, model_type, classifier, pov_lvl, output_label):
     print("Training Validation")
     print("Model: ", model_type)
-    X = df.drop([output_label,"date_posted"] , axis=1)
+    X = df.copy()
     y = df[output_label]
+    if output_label in df.columns:
+        X = X.drop([output_label] , axis=1)
+    if "date_posted" in df.columns:
+        X = X.drop(["date_posted"] , axis=1)
     tscv = TimeSeriesSplit(n_splits=5)
     acc = []
     prec = []
@@ -68,8 +72,8 @@ if __name__ == "__main__":
         # split by poverty type, refer to config
         if split_by_poverty == "true":
             for pov_lvl, pov_col_name in config["poverty_columns"].items():
-                train_df_path = f"../outputs/{pov_lvl}_pov_lvl_train_df.csv"
-                train_df = pd.read_csv(train_df_path)
-                cross_validate(train_df, model_type, pov_lvl, "fully_funded")
+                pov_train_df_path = f"../outputs/{pov_lvl}_pov_lvl_train_df.csv"
+                pov_train_df = pd.read_csv(pov_train_df_path)
+                cross_validate(pov_train_df, model_type, classifier, pov_lvl, "fully_funded")
 
     print(f"Model training complete.")

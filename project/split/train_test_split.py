@@ -23,7 +23,7 @@ def split_data(df, drop_year, test_year):
     test_df = new_df[new_df['date_posted'].str[:4] == test_year]
 
     # return training data and testing data sets
-    return train_df, test_df
+    return train_df.sort_values(by="date_posted"), test_df.sort_values(by="date_posted")
 
 def smote_balancing(df, pov_col_name, config):
     '''

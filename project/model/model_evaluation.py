@@ -88,8 +88,12 @@ def pre_rec(y_t, y_s, model_type, k_inc=0.01):
 
 def evaluate(test_df, classifier, model_type):
     print(model_type)
-    X = test_df.drop(["fully_funded", "date_posted"], axis=1)
+    X = test_df.copy()
     y = test_df["fully_funded"]
+    if "fully_funded" in test_df.columns:
+        X = X.drop(["fully_funded"] , axis=1)
+    if "date_posted" in test_df.columns:
+        X = X.drop(["date_posted"] , axis=1)
 
     y_pred = classifier.predict(X)
     y_pred_probs = classifier.predict_proba(X)[:, 1]
