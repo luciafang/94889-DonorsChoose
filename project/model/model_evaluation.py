@@ -119,27 +119,14 @@ if __name__ == "__main__":
         test_df = test_df.set_index('projectid')
 
         evaluate(test_df, classifier, model_type)
-        
-        # y_pred_path = "../outputs/" + model_type + f"_{pov_lvl}_pred.csv"
-        # y_pred_prob_path = "../outputs/" + model_type + f"_{pov_lvl}_pred_probs.csv"
-        # y_test_path = "../outputs/" + model_type + f"_{pov_lvl}_true_vals.csv"
 
-        # y_test = pd.read_csv(y_test_path)
-        # y_pred = pd.read_csv(y_pred_path)
-        # y_pred_probs = pd.read_csv(y_pred_prob_path)
+        if split_by_poverty == "true":
+            for pov_lvl, pov_col_name in config["poverty_columns"].items():
+                classifier = joblib.load("../outputs/" + model_type + f"_{pov_lvl}_poverty.pkl")
+                print(pov_lvl + " poverty level")
+                smote_test_path = f"../outputs/{pov_lvl}_pov_lvl_test_df.csv"
+                smote_test_df = pd.read_csv(smote_test_path)
 
-        # print(model_type)
-        # metrics(y_test, y_pred, y_pred_probs, model_type)
-        # if split_by_poverty == "true":
-        #     for pov_lvl, pov_col_name in config["poverty_columns"].items():
-        #         print(pov_col_name)
-        #         y_pred_path = "../outputs/" + model_type + f"_{pov_lvl}_pred.csv"
-        #         y_pred_prob_path = "../outputs/" + model_type + f"_{pov_lvl}_pred_probs.csv"
-        #         y_test_path = "../outputs/" + model_type + f"_{pov_lvl}_true_vals.csv"
-
-        #         y_test = pd.read_csv(y_test_path)
-        #         y_pred = pd.read_csv(y_pred_path)
-        #         y_pred_probs = pd.read_csv(y_pred_prob_path)
-        #         metrics(y_test, y_pred, y_pred_probs, model_type)
+                evaluate(smote_test_df, classifier, model_type)
 
     print(f"Model evaluation complete.")
