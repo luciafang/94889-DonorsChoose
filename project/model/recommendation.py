@@ -71,4 +71,5 @@ for key, recs in recommendations.items():
     plt.xlabel("Model")
     plt.ylabel("Project ID")
 
-    plt.savefig("../outputs/{model_type}_{pov_level}_poverty_level_heatmap.png", dpi=300, bbox_inches="tight")
+    output_path = f"../outputs/{model_type}_{pov_level}_poverty_level_heatmap.png"
+    plt.savefig(output_path, dpi=300, bbox_inches="tight")
