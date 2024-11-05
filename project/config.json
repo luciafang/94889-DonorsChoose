@@ -10,7 +10,6 @@
     "features_to_use": [
         "poverty_level",
         "school_metro",
-        "teacher_referred_count",
         "grade_level",
         "total_price_excluding_optional_support",
         "primary_focus_subject",
@@ -31,7 +30,6 @@
         "logistic_regression"
     ],
     "projects_imputation": {
-        "teacher_referred_count": "0",
         "students_reached": "mean",
         "total_projects_in_city": "0",
         "fully_funded": "neg1"
