@@ -3,6 +3,8 @@ import pandas as pd
 import numpy as np
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
+from sklearn import svm
+from sklearn.calibration import CalibratedClassifierCV
 from sklearn.model_selection import TimeSeriesSplit
 from sklearn.metrics import accuracy_score, precision_score, recall_score
 import json
@@ -66,14 +68,22 @@ if __name__ == "__main__":
         pov_lvl = "none"
         if model_type == "random_forest":
             classifier = RandomForestClassifier(random_state=42)
-        if model_type == "logistic_regression":
+            cross_validate(train_df, model_type, classifier, pov_lvl, "fully_funded")
+        elif model_type == "logistic_regression":
             classifier = LogisticRegression(random_state=42)
-        cross_validate(train_df, model_type, classifier, pov_lvl, "fully_funded")
+            cross_validate(train_df, model_type, classifier, pov_lvl, "fully_funded")
+        elif model_type == "svm":
+            classifier = svm.LinearSVC()
+            cross_validate(train_df, model_type, classifier, pov_lvl, "fully_funded")
+            calib_classifier = CalibratedClassifierCV(classifier, method='sigmoid')
+            cross_validate(train_df, model_type + "_calibrated", calib_classifier, pov_lvl, "fully_funded")
         # split by poverty type, refer to config
         if split_by_poverty == "true":
             for pov_lvl, pov_col_name in config["poverty_columns"].items():
                 pov_train_df_path = f"../outputs/{pov_lvl}_pov_lvl_train_df.csv"
                 pov_train_df = pd.read_csv(pov_train_df_path)
                 cross_validate(pov_train_df, model_type, classifier, pov_lvl, "fully_funded")
+                if "svm" in model_type:
+                    cross_validate(pov_train_df, model_type + "_calibrated", calib_classifier, pov_lvl, "fully_funded")
 
     print(f"Model training complete.")

@@ -16,7 +16,7 @@ def save_feature_importance_plot(classifier, X, model_type, pov_lvl):
 
     indices = np.argsort(importances)
 
-    fig, ax = plt.subplots(figsize=(10, 8))
+    fig, ax = plt.subplots(figsize=(12, 12))
     ax.barh(range(len(importances)), importances[indices])
     ax.set_yticks(range(len(importances)))
 
@@ -35,7 +35,7 @@ def save_cofficient_plot(classifier, X_train, model_type, pov_lvl):
     feature_names = X_train.columns
 
     # Create a horizontal bar chart
-    plt.figure(figsize=(10, 6))
+    plt.figure(figsize=(12, 12))
     plt.barh(feature_names, coefficients)
     plt.xlabel('Coefficient Value')
     plt.ylabel('Feature')
@@ -75,6 +75,8 @@ if __name__ == "__main__":
                     save_feature_importance_plot(classifier, pov_train_df, model_type, pov_lvl)
                 if model_type == "logistic_regression":
                     save_cofficient_plot(classifier, pov_train_df, model_type, pov_lvl)
+                if model_type == "svm":
+                    save_cofficient_plot(classifier, pov_train_df, model_type, pov_lvl)
     
     # for model with all poverty levels
     models = config["models"]
@@ -84,4 +86,6 @@ if __name__ == "__main__":
         if model_type == "random_forest":
             save_feature_importance_plot(classifier, X, model_type, pov_lvl)
         if model_type == "logistic_regression":
+            save_cofficient_plot(classifier, X, model_type, pov_lvl)
+        if model_type == "svm":
             save_cofficient_plot(classifier, X, model_type, pov_lvl)

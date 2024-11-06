@@ -28,7 +28,8 @@
     ],
     "models": [
         "random_forest",
-        "logistic_regression"
+        "logistic_regression",
+        "svm"
     ],
     "projects_imputation": {
         "students_reached": "mean",

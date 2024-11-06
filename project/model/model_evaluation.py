@@ -123,7 +123,7 @@ def plot_false_discovery_rate_ref(model_names, model_outputs, test_df):
 
     # Plotting
     plt.figure(figsize=(8, 6))
-    colors = ["blue", "orange"]
+    colors = ["blue", "orange", "purple"]
     i = 0
     for fdr in model_fdrs:
         prec = model_prec[i]
@@ -162,7 +162,7 @@ def plot_recall_disparity(model_names, model_outputs, test_df):
 
     
     plt.figure(figsize=(8, 6))
-    colors = ["blue", "orange"]
+    colors = ["blue", "orange", "purple"]
     i = 0
     for recall in model_recalls:
         prec = model_prec[i]
@@ -194,6 +194,8 @@ if __name__ == "__main__":
 
     for model_type in models:
         pov_lvl = "none"
+        if model_type == "svm":
+            model_type = model_type + "_calibrated"
         classifier = joblib.load("../outputs/" + model_type + f"_{pov_lvl}_poverty.pkl")
 
         test_path = "../outputs/test_df.csv"
