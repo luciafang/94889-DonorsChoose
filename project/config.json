@@ -23,7 +23,8 @@
         "school_metro",
         "grade_level",
         "primary_focus_subject",
-        "resource_type"
+        "resource_type",
+        "month_posted"
     ],
     "models": [
         "random_forest",

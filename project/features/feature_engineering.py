@@ -110,7 +110,7 @@ if __name__ == "__main__":
         'percentage_reached_month_1',
         'percentage_reached_month_2',
         'percentage_reached_month_3',
-        'percentage_reached_month_4'
+        # 'percentage_reached_month_4'
     ]], on='projectid', how='left')
 
     # Save the updated dataset with new features
