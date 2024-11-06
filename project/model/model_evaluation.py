@@ -1,5 +1,5 @@
 # metrics: accuracy, precision, recall?
-from sklearn.metrics import accuracy_score, precision_score, recall_score, roc_curve, auc
+from sklearn.metrics import accuracy_score, precision_score, recall_score, roc_curve, auc, confusion_matrix
 import pandas as pd
 import matplotlib.pyplot as plt
 import json
@@ -102,13 +102,95 @@ def evaluate(test_df, classifier, model_type):
     plot_roc_curve(y, y_pred, model_type)
     metrics(y, y_pred)
 
-    return y_pred, y_pred_probs
+    return y, y_pred, y_pred_probs, X
+
+def plot_false_discovery_rate_ref(model_names, model_outputs, test_df):
+    ref_mask = test_df["poverty_level_moderate poverty"] == True
+    protect_mask = test_df["poverty_level_highest poverty"] == True
+    model_fdrs = []
+    model_prec = []
+    for output in model_outputs:
+        tn, fp, fn, tp = confusion_matrix(model_outputs[output]["y_test"][ref_mask], model_outputs[output]["y_pred"][ref_mask]).ravel()
+        fdr_ref = fp / (fp + tp)
+
+        tn, fp, fn, tp = confusion_matrix(model_outputs[output]["y_test"][protect_mask], model_outputs[output]["y_pred"][protect_mask]).ravel()
+        fdr_protect = fp / (fp + tp)
+
+        model_fdrs.append(fdr_protect/fdr_ref)
+
+        precision = precision_score(model_outputs[output]["y_test"], model_outputs[output]["y_pred"])
+        model_prec.append(precision)
+
+    # Plotting
+    plt.figure(figsize=(8, 6))
+    colors = ["blue", "orange"]
+    i = 0
+    for fdr in model_fdrs:
+        prec = model_prec[i]
+        model = model_names[i]
+        color = colors[i]
+        i += 1
+
+        # Scatter plot with different colors for each model
+        plt.scatter(prec, fdr, color=color, label=model, s=100)  # `s` controls the size of points
+
+    # Add labels and legend
+    plt.xlabel('Precision')
+    plt.ylabel('False Discovery Rate (FDR) Disparity')
+    plt.title('FDR Disparity vs Precision')
+    plt.legend()
+    plt.xlim(0, 1)
+    plt.ylim(0, 1.5)
+
+    # Save the plot
+    plt.savefig("../figures/fdr_disparity_plot.jpg")
+    plt.clf()
+
+def plot_recall_disparity(model_names, model_outputs, test_df):
+    ref_mask = test_df["poverty_level_moderate poverty"] == True
+    protect_mask = test_df["poverty_level_highest poverty"] == True
+
+    model_recalls = []
+    model_prec = []
+    for output in model_outputs:
+        recall_ref = recall_score(model_outputs[output]["y_test"][ref_mask], model_outputs[output]["y_pred"][ref_mask])
+        recall_protect = recall_score(model_outputs[output]["y_test"][protect_mask], model_outputs[output]["y_pred"][protect_mask])
+        model_recalls.append(recall_protect/recall_ref)
+
+        precision = precision_score(model_outputs[output]["y_test"], model_outputs[output]["y_pred"])
+        model_prec.append(precision)
+
+    
+    plt.figure(figsize=(8, 6))
+    colors = ["blue", "orange"]
+    i = 0
+    for recall in model_recalls:
+        prec = model_prec[i]
+        model = model_names[i]
+        color = colors[i]
+        i += 1
+        # Scatter plot with different colors for each model
+        plt.scatter(prec, recall, color=color, label=model, s=100)
+
+    # Add labels and legend
+    plt.xlabel('Precision')
+    plt.ylabel('Recall Disparity')
+    plt.title('Recall Disparity vs Precision')
+    plt.legend()
+    plt.xlim(0, 1.2)
+    plt.ylim(0, 1.2)
+
+    # Save the plot
+    plt.savefig("../figures/recall_disparity_plot.jpg")
+    plt.clf()
+
 
 if __name__ == "__main__":
     config = load_config()
     models = config["models"]
 
     split_by_poverty = config["split_by_poverty"]
+    test_results = {}
 
     for model_type in models:
         pov_lvl = "none"
@@ -118,7 +200,8 @@ if __name__ == "__main__":
         test_df = pd.read_csv(test_path)
         test_df = test_df.set_index('projectid')
 
-        evaluate(test_df, classifier, model_type)
+        y, y_pred, y_pred_probs, X = evaluate(test_df, classifier, model_type)
+        test_results[model_type] = {"y_test": y, "y_pred": y_pred}
 
         if split_by_poverty == "true":
             for pov_lvl, pov_col_name in config["poverty_columns"].items():
@@ -129,4 +212,8 @@ if __name__ == "__main__":
 
                 evaluate(smote_test_df, classifier, model_type)
 
+    plot_false_discovery_rate_ref(models, test_results, X)
+    plot_recall_disparity(models, test_results, X)    
+
     print(f"Model evaluation complete.")
+
