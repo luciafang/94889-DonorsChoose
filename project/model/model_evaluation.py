@@ -200,7 +200,6 @@ if __name__ == "__main__":
 
         test_path = "../outputs/test_df.csv"
         test_df = pd.read_csv(test_path)
-        test_df = test_df.set_index('projectid')
 
         y, y_pred, y_pred_probs, X = evaluate(test_df, classifier, model_type)
         test_results[model_type] = {"y_test": y, "y_pred": y_pred}

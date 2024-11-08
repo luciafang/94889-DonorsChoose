@@ -35,7 +35,7 @@ def smote_balancing(df, pov_col_name, config):
     '''
     smote = SMOTE(random_state=42)
 
-    X = df.drop(['fully_funded', 'projectid', 'date_posted'], axis=1)
+    X = df.drop(['fully_funded', 'date_posted'], axis=1)
     y = df['fully_funded']
 
     new_X = X[X[pov_col_name] == True].drop(columns=[

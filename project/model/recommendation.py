@@ -14,6 +14,7 @@ if __name__ == "__main__":
     # Load test data
     test_df = pd.read_csv('../outputs/test_df.csv')
     test_df['date_posted'] = pd.to_datetime(test_df['date_posted'])
+    test_df['projectid'] = test_df.index
 
     # Filter projects posted for at least 3 months
     fixed_max_date = pd.to_datetime('2013-12-31')

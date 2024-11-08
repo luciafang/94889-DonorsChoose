@@ -2,6 +2,7 @@ import pandas as pd
 import json
 import numpy as np
 import os
+from sklearn.preprocessing import StandardScaler
 
 def get_school_metro(project, df_projects_metro_filled):
   '''
@@ -78,27 +79,27 @@ def remove_outliers(df):
     numeric_cols = df.select_dtypes(include=[np.number]).columns
     initial_row_count = df.shape[0]
 
-    # for col in numeric_cols:
-    #     if col in skipped_columns:
-    #         print(f"Skipping outlier removal for column '{col}'.")
-    #         continue
-    #
-    #     Q1 = df[col].quantile(0.25)
-    #     Q3 = df[col].quantile(0.75)
-    #     IQR = Q3 - Q1
-    #     lower_bound = Q1 - (1.5 * IQR)
-    #     upper_bound = Q3 + (1.5 * IQR)
-    #
-    #     # Identify outliers
-    #     outliers = df[(df[col] < lower_bound) | (df[col] > upper_bound)]
-    #     outlier_count = outliers.shape[0]
-    #
-    #     # Print information about outliers
-    #     if outlier_count > 0:
-    #         print(f"Column '{col}': Found {outlier_count} outliers (lower bound: {lower_bound}, upper bound: {upper_bound}).")
-    #
-    #     # Remove outliers
-    #     df = df[(df[col] >= lower_bound) & (df[col] <= upper_bound)]
+    for col in numeric_cols:
+        if col in skipped_columns:
+            print(f"Skipping outlier removal for column '{col}'.")
+            continue
+    
+        Q1 = df[col].quantile(0.25)
+        Q3 = df[col].quantile(0.75)
+        IQR = Q3 - Q1
+        lower_bound = Q1 - (1.5 * IQR)
+        upper_bound = Q3 + (1.5 * IQR)
+    
+        # Identify outliers
+        outliers = df[(df[col] < lower_bound) | (df[col] > upper_bound)]
+        outlier_count = outliers.shape[0]
+    
+        # Print information about outliers
+        if outlier_count > 0:
+            print(f"Column '{col}': Found {outlier_count} outliers (lower bound: {lower_bound}, upper bound: {upper_bound}).")
+    
+        # Remove outliers
+        df = df[(df[col] >= lower_bound) & (df[col] <= upper_bound)]
 
     final_row_count = df.shape[0]
     dropped_outlier_count = initial_row_count - final_row_count
@@ -118,8 +119,33 @@ def one_hot_encode(df, categorical_features):
     df_encoded = pd.get_dummies(df, columns=categorical_features)
     return df_encoded
 
+def scale_quant_vars(df, categorical_features):
+    """
+    df: dataset
+    categorical_features: list of categorical features to exclude from scaling
+    """
+    df = df.set_index("projectid")
+    categorical_features.append("date_posted")
+    categorical_features.append("fully_funded")
+    categorical_vars = df[categorical_features]
+    quant_vars = df.drop(categorical_features, axis=1)
+    categorical_features.remove("date_posted")
+    categorical_features.remove("fully_funded")
+
+    quant_features = quant_vars.columns
+
+    scaler = StandardScaler()
+    scaled_quant = scaler.fit_transform(quant_vars)
+
+    df_scaled_quant = pd.DataFrame(scaled_quant, columns=quant_features, index=df.index)
+    df_transformed = pd.concat([df_scaled_quant, categorical_vars], axis=1)
+
+    return df_transformed
+
 if __name__ == "__main__":
     config = load_config()
+
+    categorical_variables = config['one_hot_encode_features']
     
     selected_dataset_path = "../outputs/selected_dataset_with_new_features.csv"
     df = pd.read_csv(selected_dataset_path)
@@ -128,10 +154,11 @@ if __name__ == "__main__":
 
     # Clean the dataset
     df_cleaned = clean_and_fill_data(df)
-    # df_cleaned = remove_outliers(df_cleaned)
+
+    df_scaled = scale_quant_vars(df, categorical_variables)
 
     # One-hot encode specified categorical features
-    df_cleaned = one_hot_encode(df_cleaned, config['one_hot_encode_features'])
+    df_cleaned = one_hot_encode(df_scaled, categorical_variables)
 
     # Print final row count
     final_row_count = df_cleaned.shape[0]
