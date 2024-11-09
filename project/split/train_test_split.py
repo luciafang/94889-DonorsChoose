@@ -20,6 +20,9 @@ def split_data(df, drop_year, test_year):
 
     # split off data used for testing (2013)
     train_df = new_df[new_df['date_posted'].str[:4] != test_year]
+    # for projects posted in september, if not fully funded, drop
+    train_df = train_df.drop(train_df[(train_df['date_posted'].str[5:7] == '09') & (train_df['fully_funded'] == 0)].index)
+
     test_df = new_df[new_df['date_posted'].str[:4] == test_year]
 
     # return training data and testing data sets
