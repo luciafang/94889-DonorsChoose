@@ -51,26 +51,23 @@ if __name__ == "__main__":
             # Store recommendations
             recommendations[(model_type, pov_level)] = top_recommendations[['projectid', 'date_posted', f'probability_fully_funded_{model_type}']]
 
-    # Create heatmaps for each model and poverty level combination
     for key, recs in recommendations.items():
-        model_type, pov_level = key
+        model_type, pov_level = key  # Unpack model type and poverty level
 
-        # Pivot data for the heatmap
-        heatmap_data = recs.pivot_table(
-            index='projectid',
-            values=f'probability_fully_funded_{model_type}',
-            aggfunc='mean'
-        )
+        # Sort projects by probability to create a ranking
+        recs_sorted = recs.sort_values(f'probability_fully_funded_{model_type}', ascending=False).reset_index(drop=True)
+        recs_sorted['rank'] = recs_sorted.index + 1  # Add rank column
 
-        # Plot heatmap
-        plt.figure(figsize=(8, 10))
-        sns.heatmap(
-            heatmap_data, annot=True, cmap="YlGnBu", fmt=".2f",
-            cbar_kws={'label': 'Probability of Fully Funded'}
-        )
-        plt.title(f"{model_type.capitalize()} - {pov_level.capitalize()} Poverty Level")
-        plt.xlabel("Model")
-        plt.ylabel("Project ID")
+        # Add model type and poverty level columns
+        recs_sorted['model_type'] = model_type.capitalize()
+        recs_sorted['poverty_level'] = pov_level.capitalize()
 
-        output_path = f"../outputs/{model_type}_{pov_level}_poverty_level_heatmap.png"
-        plt.savefig(output_path, dpi=300, bbox_inches="tight")
+        # Select only relevant columns and rename for consistency
+        table = recs_sorted[
+            ['rank', 'projectid', 'model_type', 'poverty_level', f'probability_fully_funded_{model_type}']]
+        table.rename(columns={f'probability_fully_funded_{model_type}': 'probability_fully_funded'}, inplace=True)
+
+        # Save table to CSV
+        output_path = f"../outputs/{model_type}_{pov_level}_poverty_level.csv"
+        table.to_csv(output_path, index=False)
+        print(f"Saved table to {output_path}")
