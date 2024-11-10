@@ -68,6 +68,8 @@ if __name__ == "__main__":
             if "date_posted" in pov_train_df.columns:
                 pov_train_df = pov_train_df.drop(["date_posted"] , axis=1)
             for model_type in models:
+                if model_type == "baseline":
+                    continue
                 classifier = joblib.load("../outputs/" + model_type + f"_{pov_lvl}_poverty.pkl")
                 if model_type == "random_forest":
                     save_feature_importance_plot(classifier, pov_train_df, model_type, pov_lvl)
@@ -80,6 +82,8 @@ if __name__ == "__main__":
     models = config["models"]
     pov_lvl = "none"
     for model_type in models:
+        if model_type == "baseline":
+                    continue
         classifier = joblib.load("../outputs/" + model_type + f"_{pov_lvl}_poverty.pkl")
         if model_type == "random_forest":
             save_feature_importance_plot(classifier, X, model_type, pov_lvl)

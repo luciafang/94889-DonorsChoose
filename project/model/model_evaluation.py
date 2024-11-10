@@ -86,6 +86,26 @@ def pre_rec(y_t, y_s, model_type, k_inc=0.01):
 
     return (precision_k,recall_k)
 
+def baseline_predict(df, sort_col):
+    copy_df = df.copy()
+
+    # use specified column sort_col to sort dataset and predict outcome variables
+    sorted_df = copy_df.sort_values(by=sort_col, ascending=False)
+
+    # get values in column
+    sort_col_df = sorted_df[sort_col].to_frame()
+
+    # use .3 bc 30% of projects don't get funded, so want to predict top 30 in sort_col as not getting funded
+    split_val = round(.3 * len(sort_col_df))
+
+    copy_df["fully_funded_pred"] = 0
+    
+    # predict all the projects with a value less than the split_val as getting funded, should be about 70% of projects
+    copy_df.loc[copy_df[sort_col] < sort_col_df.iloc[split_val].values[0], "fully_funded_pred"] = 1
+
+    # return y_test, y_pred
+    return copy_df["fully_funded_pred"]
+
 def evaluate(test_df, classifier, model_type):
     print(model_type)
     X = test_df.copy()
@@ -95,18 +115,22 @@ def evaluate(test_df, classifier, model_type):
     if "date_posted" in test_df.columns:
         X = X.drop(["date_posted"] , axis=1)
 
-    y_pred = classifier.predict(X)
-    y_pred_probs = classifier.predict_proba(X)[:, 1]
-
-    pre_rec(y, y_pred_probs, model_type, k_inc=0.01)
+    if model_type != "baseline":
+        y_pred = classifier.predict(X)
+        y_pred_probs = classifier.predict_proba(X)[:, 1]
+        pre_rec(y, y_pred_probs, model_type, k_inc=0.01)
+    else:
+        y_pred = baseline_predict(X, "total_price_excluding_optional_support")
+        y_pred_probs = []
+    
     plot_roc_curve(y, y_pred, model_type)
     metrics(y, y_pred)
 
     return y, y_pred, y_pred_probs, X
 
 def plot_false_discovery_rate_ref(model_names, model_outputs, test_df):
-    ref_mask = test_df["poverty_level_moderate poverty"] == True
-    protect_mask = test_df["poverty_level_highest poverty"] == True
+    ref_mask = test_df["poverty_level_low poverty"] == True
+    protect_mask = test_df["poverty_level_high poverty"] == True
     model_fdrs = []
     model_prec = []
     for output in model_outputs:
@@ -123,7 +147,7 @@ def plot_false_discovery_rate_ref(model_names, model_outputs, test_df):
 
     # Plotting
     plt.figure(figsize=(8, 6))
-    colors = ["blue", "orange", "purple"]
+    colors = ["blue", "orange", "purple", "pink"]
     i = 0
     for fdr in model_fdrs:
         prec = model_prec[i]
@@ -147,8 +171,8 @@ def plot_false_discovery_rate_ref(model_names, model_outputs, test_df):
     plt.clf()
 
 def plot_recall_disparity(model_names, model_outputs, test_df):
-    ref_mask = test_df["poverty_level_moderate poverty"] == True
-    protect_mask = test_df["poverty_level_highest poverty"] == True
+    ref_mask = test_df["poverty_level_low poverty"] == True
+    protect_mask = test_df["poverty_level_high poverty"] == True
 
     model_recalls = []
     model_prec = []
@@ -162,7 +186,7 @@ def plot_recall_disparity(model_names, model_outputs, test_df):
 
     
     plt.figure(figsize=(8, 6))
-    colors = ["blue", "orange", "purple"]
+    colors = ["blue", "orange", "purple", "pink"]
     i = 0
     for recall in model_recalls:
         prec = model_prec[i]
@@ -194,12 +218,13 @@ if __name__ == "__main__":
 
     for model_type in models:
         pov_lvl = "none"
-        if model_type == "svm":
-            model_type = model_type + "_calibrated"
-        classifier = joblib.load("../outputs/" + model_type + f"_{pov_lvl}_poverty.pkl")
-
         test_path = "../outputs/test_df.csv"
         test_df = pd.read_csv(test_path)
+        classifier = ""
+        if model_type != "baseline":
+            if model_type == "svm":
+                model_type = model_type + "_calibrated"
+            classifier = joblib.load("../outputs/" + model_type + f"_{pov_lvl}_poverty.pkl")
 
         y, y_pred, y_pred_probs, X = evaluate(test_df, classifier, model_type)
         test_results[model_type] = {"y_test": y, "y_pred": y_pred}

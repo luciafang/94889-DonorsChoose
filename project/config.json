@@ -27,6 +27,7 @@
         "month_posted"
     ],
     "models": [
+        "baseline",
         "random_forest",
         "logistic_regression",
         "svm"
