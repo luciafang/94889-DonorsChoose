@@ -53,7 +53,6 @@ if __name__ == "__main__":
 
     df_path = "../outputs/train_df.csv"
     df = pd.read_csv(df_path)
-    df = df.set_index('projectid')
     X = df.copy()
     if "fully_funded" in df.columns:
         X = X.drop(["fully_funded"] , axis=1)
@@ -62,7 +61,6 @@ if __name__ == "__main__":
     if split_by_poverty == "true":
         for pov_lvl, pov_col_name in config["poverty_columns"].items():
             # X_res already removed projectid column thus removing it
-            # X_train = X_train.set_index('projectid')
             pov_train_df_path = f"../outputs/{pov_lvl}_pov_lvl_train_df.csv"
             pov_train_df = pd.read_csv(pov_train_df_path)
             if "fully_funded" in pov_train_df.columns:
@@ -70,6 +68,8 @@ if __name__ == "__main__":
             if "date_posted" in pov_train_df.columns:
                 pov_train_df = pov_train_df.drop(["date_posted"] , axis=1)
             for model_type in models:
+                if model_type == "baseline":
+                    continue
                 classifier = joblib.load("../outputs/" + model_type + f"_{pov_lvl}_poverty.pkl")
                 if model_type == "random_forest":
                     save_feature_importance_plot(classifier, pov_train_df, model_type, pov_lvl)
@@ -82,6 +82,8 @@ if __name__ == "__main__":
     models = config["models"]
     pov_lvl = "none"
     for model_type in models:
+        if model_type == "baseline":
+                    continue
         classifier = joblib.load("../outputs/" + model_type + f"_{pov_lvl}_poverty.pkl")
         if model_type == "random_forest":
             save_feature_importance_plot(classifier, X, model_type, pov_lvl)

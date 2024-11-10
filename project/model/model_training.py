@@ -58,7 +58,6 @@ def cross_validate(df, model_type, classifier, pov_lvl, output_label):
 if __name__ == "__main__":
     train_path = "../outputs/train_df.csv"
     train_df = pd.read_csv(train_path)
-    train_df = train_df.set_index('projectid')
 
     config = load_config()
     models = config["models"]
@@ -66,7 +65,9 @@ if __name__ == "__main__":
 
     for model_type in models:
         pov_lvl = "none"
-        if model_type == "random_forest":
+        if model_type == "baseline":
+            continue
+        elif model_type == "random_forest":
             classifier = RandomForestClassifier(random_state=42)
             cross_validate(train_df, model_type, classifier, pov_lvl, "fully_funded")
         elif model_type == "logistic_regression":
