@@ -142,6 +142,12 @@ def scale_quant_vars(df, categorical_features):
 
     return df_transformed
 
+def combine_poverty_levels(df, replacements):
+    for pov_lvl in replacements:
+        df['poverty_level'].replace(pov_lvl, replacements[pov_lvl], inplace=True)
+    print(df['poverty_level'])
+    return df
+
 if __name__ == "__main__":
     config = load_config()
 
@@ -154,6 +160,8 @@ if __name__ == "__main__":
 
     # Clean the dataset
     df_cleaned = clean_and_fill_data(df)
+
+    df_cleaned = combine_poverty_levels(df, config["poverty_level_replacements"])
 
     df_scaled = scale_quant_vars(df, categorical_variables)
 
