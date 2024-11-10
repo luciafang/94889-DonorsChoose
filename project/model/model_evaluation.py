@@ -231,7 +231,8 @@ if __name__ == "__main__":
 
         if split_by_poverty == "true":
             for pov_lvl, pov_col_name in config["poverty_columns"].items():
-                classifier = joblib.load("../outputs/" + model_type + f"_{pov_lvl}_poverty.pkl")
+                if model_type != "baseline":
+                    classifier = joblib.load("../outputs/" + model_type + f"_{pov_lvl}_poverty.pkl")
                 print(pov_lvl + " poverty level")
                 smote_test_path = f"../outputs/{pov_lvl}_pov_lvl_test_df.csv"
                 smote_test_df = pd.read_csv(smote_test_path)

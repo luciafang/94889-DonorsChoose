@@ -23,7 +23,7 @@ if __name__ == "__main__":
 
     # Load config and initialize parameters
     config = load_config()
-    poverty_levels = ["low", "moderate", "high", "highest"]
+    poverty_levels = ["low", "high"]
     models = ["random_forest", "logistic_regression"]
     recommendations = {}
 

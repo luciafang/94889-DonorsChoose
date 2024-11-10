@@ -145,7 +145,6 @@ def scale_quant_vars(df, categorical_features):
 def combine_poverty_levels(df, replacements):
     for pov_lvl in replacements:
         df['poverty_level'].replace(pov_lvl, replacements[pov_lvl], inplace=True)
-    print(df['poverty_level'])
     return df
 
 if __name__ == "__main__":
