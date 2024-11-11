@@ -40,7 +40,9 @@ if __name__ == "__main__":
     test_path = "../outputs/test_df.csv"
 
     train_df = pd.read_csv(train_path)
+    train_df = train_df.set_index("projectid")
     test_df = pd.read_csv(test_path)
+    test_df = test_df.set_index("projectid")
 
     for pov_lvl, pov_col_name in config["poverty_columns"].items():
         smote_dataset = smote_balancing(train_df, pov_col_name, config)

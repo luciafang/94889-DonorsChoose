@@ -53,6 +53,7 @@ if __name__ == "__main__":
 
     df_path = "../outputs/train_df.csv"
     df = pd.read_csv(df_path)
+    df = df.set_index("projectid")
     X = df.copy()
     if "fully_funded" in df.columns:
         X = X.drop(["fully_funded"] , axis=1)

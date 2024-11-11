@@ -176,5 +176,5 @@ if __name__ == "__main__":
     output_dir = os.path.dirname(cleaned_dataset_path)
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
-    df_cleaned.to_csv(cleaned_dataset_path, index=False)
+    df_cleaned.to_csv(cleaned_dataset_path, index=True)
     print(f"Dataset cleaned and saved as '{cleaned_dataset_path}'.")

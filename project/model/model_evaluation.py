@@ -220,6 +220,7 @@ if __name__ == "__main__":
         pov_lvl = "none"
         test_path = "../outputs/test_df.csv"
         test_df = pd.read_csv(test_path)
+        test_df = test_df.set_index("projectid")
         classifier = ""
         if model_type != "baseline":
             if model_type == "svm":
