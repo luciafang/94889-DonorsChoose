@@ -2,6 +2,7 @@ import sklearn as sk
 import pandas as pd
 from imblearn.over_sampling import SMOTE
 import json
+from sklearn.preprocessing import StandardScaler
 
 def load_config(config_file="../config.json"):
     """Load configuration from a JSON file."""
@@ -33,8 +34,28 @@ def smote_balancing(df, pov_col_name, config):
     X_res["fully_funded"] = y_res
     return X_res
 
+def scale_quant_vars(df, quant_variables):
+    """
+    df: dataset
+    categorical_features: list of categorical features to exclude from scaling
+    """
+    quant_variables = df[quant_variables]
+    categorical_vars = df.drop(quant_variables, axis=1)
+
+    quant_features = quant_variables.columns
+
+    scaler = StandardScaler()
+    scaled_quant = scaler.fit_transform(quant_variables)
+
+    df_scaled_quant = pd.DataFrame(scaled_quant, columns=quant_features, index=df.index)
+    df_transformed = pd.concat([df_scaled_quant, categorical_vars], axis=1)
+
+    return df_transformed
+
 if __name__ == "__main__":
     config = load_config()
+
+    quant_variables = config['quant_variables']
 
     train_path = "../outputs/train_df.csv"
     test_path = "../outputs/test_df.csv"
@@ -46,10 +67,21 @@ if __name__ == "__main__":
 
     for pov_lvl, pov_col_name in config["poverty_columns"].items():
         smote_dataset = smote_balancing(train_df, pov_col_name, config)
+        smote_dataset_scaled = scale_quant_vars(smote_dataset, quant_variables)
+
         smote_test_dataset = smote_balancing(test_df, pov_col_name, config)
+        smote_test_dataset_scaled = scale_quant_vars(smote_test_dataset, quant_variables)
+
         smote_path = f"../outputs/{pov_lvl}_pov_lvl_train_df.csv"
         smote_test_path = f"../outputs/{pov_lvl}_pov_lvl_test_df.csv"
-        smote_dataset.to_csv(smote_path, index=False)
-        smote_test_dataset.to_csv(smote_test_path, index=False)
+
+        smote_dataset_scaled.to_csv(smote_path, index=True)
+        smote_test_dataset_scaled.to_csv(smote_test_path, index=True)
+
+    train_df_scaled = scale_quant_vars(train_df, quant_variables)
+    test_df_scaled = scale_quant_vars(test_df, quant_variables)
+
+    train_df_scaled.to_csv(train_path, index=True)
+    test_df_scaled.to_csv(test_path, index=True)
 
     print(f"Data balancing and segmenting complete.")

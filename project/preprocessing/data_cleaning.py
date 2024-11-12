@@ -2,7 +2,6 @@ import pandas as pd
 import json
 import numpy as np
 import os
-from sklearn.preprocessing import StandardScaler
 
 def get_school_metro(project, df_projects_metro_filled):
   '''
@@ -119,32 +118,9 @@ def one_hot_encode(df, categorical_features):
     df_encoded = pd.get_dummies(df, columns=categorical_features)
     return df_encoded
 
-def scale_quant_vars(df, categorical_features):
-    """
-    df: dataset
-    categorical_features: list of categorical features to exclude from scaling
-    """
-    df = df.set_index("projectid")
-    categorical_features.append("date_posted")
-    categorical_features.append("fully_funded")
-    categorical_vars = df[categorical_features]
-    quant_vars = df.drop(categorical_features, axis=1)
-    categorical_features.remove("date_posted")
-    categorical_features.remove("fully_funded")
-
-    quant_features = quant_vars.columns
-
-    scaler = StandardScaler()
-    scaled_quant = scaler.fit_transform(quant_vars)
-
-    df_scaled_quant = pd.DataFrame(scaled_quant, columns=quant_features, index=df.index)
-    df_transformed = pd.concat([df_scaled_quant, categorical_vars], axis=1)
-
-    return df_transformed
-
 def combine_poverty_levels(df, replacements):
     for pov_lvl in replacements:
-        df['poverty_level'].replace(pov_lvl, replacements[pov_lvl], inplace=True)
+        df['poverty_level'] = df['poverty_level'].replace(pov_lvl, replacements[pov_lvl])
     return df
 
 if __name__ == "__main__":
@@ -162,10 +138,8 @@ if __name__ == "__main__":
 
     df_cleaned = combine_poverty_levels(df, config["poverty_level_replacements"])
 
-    df_scaled = scale_quant_vars(df, categorical_variables)
-
     # One-hot encode specified categorical features
-    df_cleaned = one_hot_encode(df_scaled, categorical_variables)
+    df_cleaned = one_hot_encode(df_cleaned, categorical_variables)
 
     # Print final row count
     final_row_count = df_cleaned.shape[0]
