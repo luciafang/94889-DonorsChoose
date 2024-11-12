@@ -286,136 +286,137 @@ def plot_recall_disparity(model_names, model_outputs, test_df, stem_cols, pov_lv
 
 def collect_temporal_performance(test_df, classifier, model_type):
     """
-    Collect model performance by year using date_posted without modifying model features
+    Collect model performance by month using date_posted without modifying model features.
     """
     # Create copy and convert date_posted to datetime
     df = test_df.copy()
+    df['date_posted'] = pd.to_datetime(df['date_posted'])
     
-    # Extract year from date_posted without adding it as a feature
-    date_series = pd.to_datetime(df['date_posted'])
-    years = sorted(date_series.dt.year.unique())
+    # Extract month from date_posted
+    date_series = df['date_posted']
+    months = sorted(date_series.dt.to_period('M').unique())
     performances = []
     
-    for year in years:
-        # Create year mask without modifying the dataframe
-        year_mask = date_series.dt.year == year
-        year_data = df[year_mask]
+    for month in months:
+        # Create month mask
+        month_mask = date_series.dt.to_period('M') == month
+        month_data = df[month_mask]
         
-        if len(year_data) > 0:
+        if len(month_data) > 0:
             if model_type != "baseline":
                 # Drop date_posted and fully_funded for prediction
-                X = year_data.drop(["fully_funded", "date_posted"], axis=1)
-                y_true = year_data["fully_funded"]
+                X = month_data.drop(["fully_funded", "date_posted"], axis=1)
+                y_true = month_data["fully_funded"]
                 y_pred = classifier.predict(X)
             else:
-                X = year_data.copy()
-                y_true = year_data["fully_funded"]
-                y_pred = baseline_predict(X, "total_price_excluding_optional_support")
+                y_true = month_data["fully_funded"]
+                y_pred = np.random.choice([0, 1], size=len(y_true))
             
-            perf = precision_score(y_true, y_pred)
-            performances.append((year, perf))
+            performance = recall_score(y_true, y_pred)
+            performances.append((month, performance))
+        else:
+            performances.append((month, None))
     
     return performances
 
 def evaluate_all_models_temporal(test_df, models, pov_lvl):
     """
-    Evaluate all models over time and calculate regrets
+    Evaluate all models over time and calculate regrets based on months.
     """
     # Collect performances for all models
     model_performances = {}
-    years_set = set()
+    months_set = set()
     
-    # First pass to collect all years and performances
+    # Collect months and performances
     for model_type in models:
         if model_type != "baseline":
-            classifier = joblib.load("../outputs/" + model_type + f"_{pov_lvl}_poverty.pkl")
+            classifier = joblib.load(f"../outputs/{model_type}_{pov_lvl}_poverty.pkl")
         else:
             classifier = None
-            
+        
         performances = collect_temporal_performance(test_df, classifier, model_type)
         model_performances[model_type] = performances
-        years_set.update(year for year, _ in performances)
+        months_set.update(month for month, _ in performances)
     
-    # Sort years for consistent ordering
-    years = sorted(years_set)
+    months = sorted(months_set)
     
-    # Create aligned performance lists
     aligned_performances = {}
     for model_type, perfs in model_performances.items():
         perf_dict = dict(perfs)
-        aligned_performances[model_type] = [perf_dict.get(year) for year in years]
+        aligned_performances[model_type] = [perf_dict.get(month) for month in months]
     
-    # Calculate best performance for each year
+    # Calculate best performance for each month
     best_performance_by_period = []
-    for i in range(len(years)):
-        period_performances = [perfs[i] for perfs in aligned_performances.values() 
-                             if perfs[i] is not None]
-        if period_performances:  # Check if there are any performances for this period
+    for i in range(len(months)):
+        period_performances = [
+            perfs[i] for perfs in aligned_performances.values() if perfs[i] is not None
+        ]
+        if period_performances:
             best_performance_by_period.append(max(period_performances))
         else:
-            best_performance_by_period.append(0)  # Or some other appropriate default
+            best_performance_by_period.append(0)
     
-    # Calculate regrets
     regrets = calculate_temporal_regret(aligned_performances, best_performance_by_period)
     
-    # Add years information to regrets for plotting
     for model_name in regrets:
-        regrets[model_name]['years'] = years
+        regrets[model_name]['months'] = months
     
     # Plot regret over time
     plot_regret_over_time(regrets, models)
     
-    return regrets, years
+    return regrets, months
 
 def plot_regret_over_time(regrets, model_names):
     """
-    Visualize regret trends over time with year labels
+    Visualize regret trends over time with month labels.
     """
-    plt.figure(figsize=(10, 6))
+    plt.figure(figsize=(12, 6))
     
-    # Get years from first model (they're all the same)
-    years = regrets[next(iter(regrets))]['years']
+    # Get months from the regrets dictionary
+    months = regrets[next(iter(regrets))]['months']
+    month_labels = [str(month.strftime('%b %Y')) for month in months]
     
     for model in model_names:
         regret_values = regrets[model]['regret_by_period']
-        plt.plot(range(len(years)), regret_values, marker='o', label=model, linewidth=2)
+        plt.plot(range(len(months)), regret_values, marker='o', label=model, linewidth=2)
     
-    plt.xlabel('Year')
+    plt.xlabel('Month')
     plt.ylabel('Regret')
-    plt.title('Model Regret Over Time')
+    plt.title('Model Regret Over Time (by Month)')
     plt.legend()
     plt.grid(True)
-    plt.xticks(range(len(years)), years, rotation=45)
+    plt.xticks(range(len(months)), month_labels, rotation=45)
     plt.tight_layout()
-    plt.savefig("../figures/regret_over_time.jpg")
+    plt.savefig("../figures/regret_over_time_by_month.jpg")
     plt.clf()
 
 def calculate_temporal_regret(model_performances, best_model_performance):
     """
-    Calculate regret across time periods for model selection
+    Calculate regret across time periods (months) for model selection.
     """
     regrets = {}
     for model_name, performances in model_performances.items():
         model_regrets = []
         for period, perf in enumerate(performances):
-            if perf is not None and best_model_performance[period] is not None:
+            if perf is not None:
                 regret = best_model_performance[period] - perf
             else:
-                regret = 0  # Or some other appropriate default value
+                regret = 0
             model_regrets.append(regret)
         
         regrets[model_name] = {
             'mean_regret': np.mean([r for r in model_regrets if r is not None]),
             'max_regret': max([r for r in model_regrets if r is not None], default=0),
-            'regret_variance': np.var([r for r in model_regrets if r is not None]) if any(r is not None for r in model_regrets) else 0,
+            'regret_variance': np.var([r for r in model_regrets if r is not None], ddof=1) 
+                               if len(model_regrets) > 1 else 0,
             'regret_by_period': model_regrets
         }
     
     return regrets
 
-def print_regret_summary(regrets, years, pov_lvl=""):
+def print_regret_summary(regrets, months, pov_lvl=""):
     """
-    Print formatted summary of regret metrics with year information
+    Print formatted summary of regret metrics with month information.
     """
     print(f"\nRegret Summary{' for ' + pov_lvl if pov_lvl else ''}:")
     summary_data = []
@@ -426,16 +427,16 @@ def print_regret_summary(regrets, years, pov_lvl=""):
             'Mean Regret': metrics['mean_regret'],
             'Max Regret': metrics['max_regret'],
             'Regret Variance': metrics['regret_variance'],
-            'Years Evaluated': f"{min(years)}-{max(years)}"
+            'Months Evaluated': f"{months[0].strftime('%b %Y')} - {months[-1].strftime('%b %Y')}"
         })
     
-    # Convert to DataFrame for nice formatting
+    # Convert to DataFrame for formatting
     summary_df = pd.DataFrame(summary_data)
     print(summary_df.to_string(index=False))
     
     # Save to CSV
-    summary_df.to_csv(f"../outputs/regret_summary{('_' + pov_lvl) if pov_lvl else ''}.csv", 
-                     index=False)
+    summary_df.to_csv(f"../outputs/regret_summary{('_' + pov_lvl) if pov_lvl else ''}_by_month.csv", 
+                      index=False)
 
 if __name__ == "__main__":
     config = load_config()
