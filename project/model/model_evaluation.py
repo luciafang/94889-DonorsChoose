@@ -217,6 +217,158 @@ def plot_recall_disparity(model_names, model_outputs, test_df, stem_cols, pov_lv
     plt.savefig("../figures/" + pov_lvl + "_recall_disparity_plot.jpg")
     plt.clf()
 
+def collect_temporal_performance(test_df, classifier, model_type):
+    """
+    Collect model performance by year using date_posted without modifying model features
+    """
+    # Create copy and convert date_posted to datetime
+    df = test_df.copy()
+    
+    # Extract year from date_posted without adding it as a feature
+    date_series = pd.to_datetime(df['date_posted'])
+    years = sorted(date_series.dt.year.unique())
+    performances = []
+    
+    for year in years:
+        # Create year mask without modifying the dataframe
+        year_mask = date_series.dt.year == year
+        year_data = df[year_mask]
+        
+        if len(year_data) > 0:
+            if model_type != "baseline":
+                # Drop date_posted and fully_funded for prediction
+                X = year_data.drop(["fully_funded", "date_posted"], axis=1)
+                y_true = year_data["fully_funded"]
+                y_pred = classifier.predict(X)
+            else:
+                X = year_data.copy()
+                y_true = year_data["fully_funded"]
+                y_pred = baseline_predict(X, "total_price_excluding_optional_support")
+            
+            perf = precision_score(y_true, y_pred)
+            performances.append((year, perf))
+    
+    return performances
+
+def evaluate_all_models_temporal(test_df, models, pov_lvl):
+    """
+    Evaluate all models over time and calculate regrets
+    """
+    # Collect performances for all models
+    model_performances = {}
+    years_set = set()
+    
+    # First pass to collect all years and performances
+    for model_type in models:
+        if model_type != "baseline":
+            classifier = joblib.load("../outputs/" + model_type + f"_{pov_lvl}_poverty.pkl")
+        else:
+            classifier = None
+            
+        performances = collect_temporal_performance(test_df, classifier, model_type)
+        model_performances[model_type] = performances
+        years_set.update(year for year, _ in performances)
+    
+    # Sort years for consistent ordering
+    years = sorted(years_set)
+    
+    # Create aligned performance lists
+    aligned_performances = {}
+    for model_type, perfs in model_performances.items():
+        perf_dict = dict(perfs)
+        aligned_performances[model_type] = [perf_dict.get(year) for year in years]
+    
+    # Calculate best performance for each year
+    best_performance_by_period = []
+    for i in range(len(years)):
+        period_performances = [perfs[i] for perfs in aligned_performances.values() 
+                             if perfs[i] is not None]
+        if period_performances:  # Check if there are any performances for this period
+            best_performance_by_period.append(max(period_performances))
+        else:
+            best_performance_by_period.append(0)  # Or some other appropriate default
+    
+    # Calculate regrets
+    regrets = calculate_temporal_regret(aligned_performances, best_performance_by_period)
+    
+    # Add years information to regrets for plotting
+    for model_name in regrets:
+        regrets[model_name]['years'] = years
+    
+    # Plot regret over time
+    plot_regret_over_time(regrets, models)
+    
+    return regrets, years
+
+def plot_regret_over_time(regrets, model_names):
+    """
+    Visualize regret trends over time with year labels
+    """
+    plt.figure(figsize=(10, 6))
+    
+    # Get years from first model (they're all the same)
+    years = regrets[next(iter(regrets))]['years']
+    
+    for model in model_names:
+        regret_values = regrets[model]['regret_by_period']
+        plt.plot(range(len(years)), regret_values, marker='o', label=model, linewidth=2)
+    
+    plt.xlabel('Year')
+    plt.ylabel('Regret')
+    plt.title('Model Regret Over Time')
+    plt.legend()
+    plt.grid(True)
+    plt.xticks(range(len(years)), years, rotation=45)
+    plt.tight_layout()
+    plt.savefig("../figures/regret_over_time.jpg")
+    plt.clf()
+
+def calculate_temporal_regret(model_performances, best_model_performance):
+    """
+    Calculate regret across time periods for model selection
+    """
+    regrets = {}
+    for model_name, performances in model_performances.items():
+        model_regrets = []
+        for period, perf in enumerate(performances):
+            if perf is not None and best_model_performance[period] is not None:
+                regret = best_model_performance[period] - perf
+            else:
+                regret = 0  # Or some other appropriate default value
+            model_regrets.append(regret)
+        
+        regrets[model_name] = {
+            'mean_regret': np.mean([r for r in model_regrets if r is not None]),
+            'max_regret': max([r for r in model_regrets if r is not None], default=0),
+            'regret_variance': np.var([r for r in model_regrets if r is not None]) if any(r is not None for r in model_regrets) else 0,
+            'regret_by_period': model_regrets
+        }
+    
+    return regrets
+
+def print_regret_summary(regrets, years, pov_lvl=""):
+    """
+    Print formatted summary of regret metrics with year information
+    """
+    print(f"\nRegret Summary{' for ' + pov_lvl if pov_lvl else ''}:")
+    summary_data = []
+    
+    for model_name, metrics in regrets.items():
+        summary_data.append({
+            'Model': model_name,
+            'Mean Regret': metrics['mean_regret'],
+            'Max Regret': metrics['max_regret'],
+            'Regret Variance': metrics['regret_variance'],
+            'Years Evaluated': f"{min(years)}-{max(years)}"
+        })
+    
+    # Convert to DataFrame for nice formatting
+    summary_df = pd.DataFrame(summary_data)
+    print(summary_df.to_string(index=False))
+    
+    # Save to CSV
+    summary_df.to_csv(f"../outputs/regret_summary{('_' + pov_lvl) if pov_lvl else ''}.csv", 
+                     index=False)
 
 if __name__ == "__main__":
     config = load_config()
@@ -232,6 +384,11 @@ if __name__ == "__main__":
 
     pov_lvl = "none"
     classifier = ""
+
+    print("\nCalculating overall temporal regret metrics...")
+    regrets, years = evaluate_all_models_temporal(test_df, models, "none")
+    print_regret_summary(regrets, years)
+    
     for model_type in models:
         if model_type != "baseline":
             classifier = joblib.load("../outputs/" + model_type + f"_{pov_lvl}_poverty.pkl")
