@@ -49,5 +49,14 @@
     "poverty_level_replacements": {
         "moderate poverty": "low poverty",
         "highest poverty": "high poverty"
-    }
+    },
+    "quant_variables": [
+        "total_price_excluding_optional_support",
+        "students_reached",
+        "total_projects_in_city",
+        "total_projects_in_state",
+        "percentage_reached_month_1",
+        "percentage_reached_month_2",
+        "percentage_reached_month_3"
+    ]
 }
