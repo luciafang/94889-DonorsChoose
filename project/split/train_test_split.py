@@ -17,13 +17,13 @@ def split_data(df, drop_year, test_year):
     '''
     # drop data without ground truth
     new_df = df[df['date_posted'].str[:4] != drop_year]
+    test_df = new_df[new_df['date_posted'].str[:4] == test_year]
 
     # split off data used for testing (2013)
     train_df = new_df[new_df['date_posted'].str[:4] != test_year]
+    
     # for projects posted in september, if not fully funded, drop
     train_df = train_df.drop(train_df[(train_df['date_posted'].str[5:7] == '09') & (train_df['fully_funded'] == 0)].index)
-
-    test_df = new_df[new_df['date_posted'].str[:4] == test_year]
 
     # return training data and testing data sets
     return train_df.sort_values(by="date_posted"), test_df.sort_values(by="date_posted")
@@ -31,6 +31,7 @@ def split_data(df, drop_year, test_year):
 if __name__ == "__main__":
     cleaned_dataset_path = "../outputs/cleaned_dataset.csv"
     df = pd.read_csv(cleaned_dataset_path)
+    df = df.drop('Unnamed: 0', axis=1) 
 
     config = load_config()
 
