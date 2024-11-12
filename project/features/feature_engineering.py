@@ -67,20 +67,6 @@ def percent_reached(df_projects, df_donations):
 
     return df_projects
 
-def aggregate_geographic(df_projects):
-    """
-    Aggregate projects by city and state.
-    """
-    # Total projects in city
-    projects_by_city = df_projects.groupby('school_city').size().reset_index(name='total_projects_in_city')
-    df_projects = df_projects.merge(projects_by_city, on='school_city', how='left')
-
-    # Total projects in state
-    projects_by_state = df_projects.groupby('school_state').size().reset_index(name='total_projects_in_state')
-    df_projects = df_projects.merge(projects_by_state, on='school_state', how='left')
-
-    return df_projects[['projectid', 'total_projects_in_city', 'total_projects_in_state']]
-
 if __name__ == "__main__":
     # Load data and config
     config = load_config()
@@ -92,25 +78,19 @@ if __name__ == "__main__":
     df_projects = pd.read_csv(projects_file)
     df_cleaned = pd.read_csv(cleaned_dataset_file)
 
-    # Geographic aggregation features
-    geographic_features = aggregate_geographic(df_projects)
-
     # Percentage reached feature engineering
     df_projects_percent = percent_reached(df_projects, df_donations)
 
     # Merge the new features into the cleaned dataset
-    df_cleaned = df_cleaned.merge(geographic_features, on='projectid', how='left')
     df_cleaned = df_cleaned.merge(df_projects_percent[[
         'projectid',
         # 'month_1_donations',
         # 'month_2_donations',
         # 'month_3_donations',
-        # 'month_4_donations',
         'month_posted',
         'percentage_reached_month_1',
         'percentage_reached_month_2',
         'percentage_reached_month_3',
-        # 'percentage_reached_month_4'
     ]], on='projectid', how='left')
 
     # Save the updated dataset with new features
