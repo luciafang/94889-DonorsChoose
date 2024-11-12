@@ -19,14 +19,13 @@ def load_config(config_file="../config.json"):
 def evaluate_fold(y_test, y_pred):
     # accuracy, precision, recall
     accuracy = accuracy_score(y_test, y_pred)
-    precision = precision_score(y_test, y_pred)
-    recall = recall_score(y_test, y_pred)
+    precision = precision_score(y_test, y_pred, zero_division=0)
+    recall = recall_score(y_test, y_pred, zero_division=0)
     # roc for all curves?
     return accuracy, precision, recall
 
 def cross_validate(df, model_type, classifier, pov_lvl, output_label):
-    print("Training Validation")
-    print("Model: ", model_type)
+    print("Training: ", model_type, "for ", pov_lvl)
     X = df.copy()
     y = df[output_label]
     if output_label in df.columns:
@@ -72,7 +71,7 @@ if __name__ == "__main__":
             classifier = RandomForestClassifier(random_state=42)
             cross_validate(train_df, model_type, classifier, pov_lvl, "fully_funded")
         elif model_type == "logistic_regression":
-            classifier = LogisticRegression(random_state=42)
+            classifier = LogisticRegression(random_state=42, max_iter=1000)
             cross_validate(train_df, model_type, classifier, pov_lvl, "fully_funded")
         elif model_type == "svm":
             classifier = svm.LinearSVC()

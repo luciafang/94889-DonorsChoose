@@ -12,7 +12,7 @@ def load_config(config_file="../config.json"):
         config = json.load(file)
     return config
 
-def plot_roc_curve(y_test, y_pred, model_type):
+def plot_roc_curve(y_test, y_pred, model_type, pov_lvl):
     fpr, tpr, thresholds = roc_curve(y_test, y_pred)
     roc_auc = auc(fpr, tpr)
 
@@ -21,7 +21,7 @@ def plot_roc_curve(y_test, y_pred, model_type):
     plt.ylabel('True Positive Rate')
     plt.title(f"{model_type} ROC Curve with Time Series Cross-Validation")
     plt.legend(loc='lower right')
-    plt.savefig("../figures/" + model_type + "_roc.jpg")
+    plt.savefig("../figures/" + model_type  + "_" + pov_lvl +  "_roc.jpg")
     plt.clf()
 
 def metrics(y_test, y_pred):
@@ -34,7 +34,7 @@ def metrics(y_test, y_pred):
     print("Recall:", recall)
 
 #Find precision and recall (true values, scores, k_increase)
-def pre_rec(y_t, y_s, model_type, k_inc=0.01):
+def pre_rec(y_t, y_s, model_type, pov_lvl, k_inc=0.01):
     # Sort scores and true labels based on the predicted scores (descending order)
     sorted_i = np.argsort(y_s)[::-1]
     y_true_s = np.array(y_t)[sorted_i]
@@ -81,7 +81,7 @@ def pre_rec(y_t, y_s, model_type, k_inc=0.01):
 
     # Show the plot
     plt.title('PR-k curve')
-    plt.savefig("../figures/" + model_type + "_prk.jpg")
+    plt.savefig("../figures/" + model_type + "_" + pov_lvl + "_prk.jpg")
     plt.clf()
 
     return (precision_k,recall_k)
@@ -106,7 +106,7 @@ def baseline_predict(df, sort_col):
     # return y_test, y_pred
     return copy_df["fully_funded_pred"]
 
-def evaluate(test_df, classifier, model_type):
+def evaluate(test_df, classifier, model_type, pov_lvl):
     print(model_type)
     X = test_df.copy()
     y = test_df["fully_funded"]
@@ -117,18 +117,21 @@ def evaluate(test_df, classifier, model_type):
 
     if model_type != "baseline":
         y_pred = classifier.predict(X)
-        y_pred_probs = classifier.predict_proba(X)[:, 1]
-        pre_rec(y, y_pred_probs, model_type, k_inc=0.01)
+        if "svm" in model_type:
+            calib_classifier = joblib.load("../outputs/" + model_type + f"_calibrated_{pov_lvl}_poverty.pkl")
+            y_pred_probs = calib_classifier.predict_proba(X)[:, 1]
+        else:
+            y_pred_probs = classifier.predict_proba(X)[:, 1]
+        pre_rec(y, y_pred_probs, model_type, pov_lvl, k_inc=0.01)
     else:
         y_pred = baseline_predict(X, "total_price_excluding_optional_support")
         y_pred_probs = []
     
-    plot_roc_curve(y, y_pred, model_type)
+    plot_roc_curve(y, y_pred, model_type, pov_lvl)
     metrics(y, y_pred)
-
     return y, y_pred, y_pred_probs, X
 
-def plot_false_discovery_rate_ref(model_names, model_outputs, test_df):
+def plot_false_discovery_rate_ref(model_names, pov_levels, model_outputs, test_df):
     ref_mask = test_df["poverty_level_low poverty"] == True
     protect_mask = test_df["poverty_level_high poverty"] == True
     model_fdrs = []
@@ -170,7 +173,7 @@ def plot_false_discovery_rate_ref(model_names, model_outputs, test_df):
     plt.savefig("../figures/fdr_disparity_plot.jpg")
     plt.clf()
 
-def plot_recall_disparity(model_names, model_outputs, test_df):
+def plot_recall_disparity(model_names, pov_levels, model_outputs, test_df):
     ref_mask = test_df["poverty_level_low poverty"] == True
     protect_mask = test_df["poverty_level_high poverty"] == True
 
@@ -216,19 +219,19 @@ if __name__ == "__main__":
     split_by_poverty = config["split_by_poverty"]
     test_results = {}
 
+    test_path = "../outputs/test_df.csv"
+    test_df = pd.read_csv(test_path)
+    test_df = test_df.set_index("projectid")
+
     for model_type in models:
         pov_lvl = "none"
-        test_path = "../outputs/test_df.csv"
-        test_df = pd.read_csv(test_path)
-        test_df = test_df.set_index("projectid")
         classifier = ""
         if model_type != "baseline":
-            if model_type == "svm":
-                model_type = model_type + "_calibrated"
             classifier = joblib.load("../outputs/" + model_type + f"_{pov_lvl}_poverty.pkl")
 
-        y, y_pred, y_pred_probs, X = evaluate(test_df, classifier, model_type)
-        test_results[model_type] = {"y_test": y, "y_pred": y_pred}
+        print(pov_lvl + " poverty level")
+        y, y_pred, y_pred_probs, X = evaluate(test_df, classifier, model_type, pov_lvl)
+        test_results[model_type + pov_lvl] = {"y_test": y, "y_pred": y_pred}
 
         if split_by_poverty == "true":
             for pov_lvl, pov_col_name in config["poverty_columns"].items():
@@ -238,10 +241,12 @@ if __name__ == "__main__":
                 smote_test_path = f"../outputs/{pov_lvl}_pov_lvl_test_df.csv"
                 smote_test_df = pd.read_csv(smote_test_path)
 
-                evaluate(smote_test_df, classifier, model_type)
+                y, y_pred, y_pred_probs, X = evaluate(smote_test_df, classifier, model_type, pov_lvl)
+        print("#######################")
+                # test_results[model_type + pov_lvl] = {"y_test": y, "y_pred": y_pred}
 
-    plot_false_discovery_rate_ref(models, test_results, X)
-    plot_recall_disparity(models, test_results, X)    
+    # plot_false_discovery_rate_ref(models, config["poverty_columns"].items(), test_results, X)
+    # plot_recall_disparity(models, config["poverty_columns"].items(), test_results, X)    
 
     print(f"Model evaluation complete.")
 
