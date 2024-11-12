@@ -58,5 +58,13 @@
         "percentage_reached_month_1",
         "percentage_reached_month_2",
         "percentage_reached_month_3"
+    ],
+    "stem_cols": [
+        "primary_focus_subject_Applied Sciences",
+        "primary_focus_subject_Environmental Science",
+        "primary_focus_subject_Health & Life Science",
+        "primary_focus_subject_Mathematics",
+        "primary_focus_subject_Nutrition",
+        "primary_focus_subject_Health & Wellness"
     ]
 }
