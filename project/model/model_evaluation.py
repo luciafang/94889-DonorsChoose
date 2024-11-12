@@ -131,9 +131,12 @@ def evaluate(test_df, classifier, model_type, pov_lvl):
     metrics(y, y_pred)
     return y, y_pred, y_pred_probs, X
 
-def plot_false_discovery_rate_ref(model_names, pov_levels, model_outputs, test_df):
-    ref_mask = test_df["poverty_level_low poverty"] == True
-    protect_mask = test_df["poverty_level_high poverty"] == True
+def plot_false_discovery_rate_ref(model_names, model_outputs, test_df, stem_cols, pov_lvl):
+    test_df["is_stem"] = test_df[stem_cols].any(axis=1)
+    non_stem = [col for col in test_df.columns if "primary_focus_subject" in col and col not in stem_cols]
+    test_df["not_stem"] = test_df[non_stem].any(axis=1)
+    ref_mask = test_df["not_stem"] == True
+    protect_mask = test_df["is_stem"] == True
     model_fdrs = []
     model_prec = []
     for output in model_outputs:
@@ -170,12 +173,15 @@ def plot_false_discovery_rate_ref(model_names, pov_levels, model_outputs, test_d
     plt.ylim(0, 1.5)
 
     # Save the plot
-    plt.savefig("../figures/fdr_disparity_plot.jpg")
+    plt.savefig("../figures/" + pov_lvl + "_fdr_disparity_plot.jpg")
     plt.clf()
 
-def plot_recall_disparity(model_names, pov_levels, model_outputs, test_df):
-    ref_mask = test_df["poverty_level_low poverty"] == True
-    protect_mask = test_df["poverty_level_high poverty"] == True
+def plot_recall_disparity(model_names, model_outputs, test_df, stem_cols, pov_lvl):
+    test_df["is_stem"] = test_df[stem_cols].any(axis=1)
+    non_stem = [col for col in test_df.columns if "primary_focus_subject" in col and col not in stem_cols]
+    test_df["not_stem"] = test_df[non_stem].any(axis=1)
+    ref_mask = test_df["not_stem"] == True
+    protect_mask = test_df["is_stem"] == True
 
     model_recalls = []
     model_prec = []
@@ -208,7 +214,7 @@ def plot_recall_disparity(model_names, pov_levels, model_outputs, test_df):
     plt.ylim(0, 1.2)
 
     # Save the plot
-    plt.savefig("../figures/recall_disparity_plot.jpg")
+    plt.savefig("../figures/" + pov_lvl + "_recall_disparity_plot.jpg")
     plt.clf()
 
 
@@ -217,24 +223,30 @@ if __name__ == "__main__":
     models = config["models"]
 
     split_by_poverty = config["split_by_poverty"]
+    stem_cols = config["stem_cols"]
     test_results = {}
 
     test_path = "../outputs/test_df.csv"
     test_df = pd.read_csv(test_path)
     test_df = test_df.set_index("projectid")
 
+    pov_lvl = "none"
+    classifier = ""
     for model_type in models:
-        pov_lvl = "none"
-        classifier = ""
         if model_type != "baseline":
             classifier = joblib.load("../outputs/" + model_type + f"_{pov_lvl}_poverty.pkl")
 
         print(pov_lvl + " poverty level")
         y, y_pred, y_pred_probs, X = evaluate(test_df, classifier, model_type, pov_lvl)
         test_results[model_type + pov_lvl] = {"y_test": y, "y_pred": y_pred}
-
-        if split_by_poverty == "true":
-            for pov_lvl, pov_col_name in config["poverty_columns"].items():
+    plot_false_discovery_rate_ref(models, test_results, X, stem_cols, pov_lvl)
+    plot_recall_disparity(models, test_results, X, stem_cols, pov_lvl)   
+    print("#######################")
+    if split_by_poverty == "true":
+        for pov_lvl, pov_col_name in config["poverty_columns"].items():
+            test_results = {}
+            classifier = ""
+            for model_type in models:
                 if model_type != "baseline":
                     classifier = joblib.load("../outputs/" + model_type + f"_{pov_lvl}_poverty.pkl")
                 print(pov_lvl + " poverty level")
@@ -242,11 +254,13 @@ if __name__ == "__main__":
                 smote_test_df = pd.read_csv(smote_test_path)
 
                 y, y_pred, y_pred_probs, X = evaluate(smote_test_df, classifier, model_type, pov_lvl)
-        print("#######################")
-                # test_results[model_type + pov_lvl] = {"y_test": y, "y_pred": y_pred}
+                test_results[model_type + pov_lvl] = {"y_test": y, "y_pred": y_pred}
+            plot_false_discovery_rate_ref(models, test_results, X, stem_cols, pov_lvl)
+            plot_recall_disparity(models, test_results, X, stem_cols, pov_lvl)  
+            print("#######################")
+            # test_results[model_type + pov_lvl] = {"y_test": y, "y_pred": y_pred}
 
-    # plot_false_discovery_rate_ref(models, config["poverty_columns"].items(), test_results, X)
-    # plot_recall_disparity(models, config["poverty_columns"].items(), test_results, X)    
+     
 
     print(f"Model evaluation complete.")
 
