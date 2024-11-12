@@ -11,8 +11,16 @@
         "poverty_level",
         "school_metro",
         "grade_level",
+        "school_state",
+        "school_charter",
+        "school_magnet",
+        "school_year_round",
+        "teacher_teach_for_america",
+        "teacher_ny_teaching_fellow",
+        "teacher_prefix",
         "total_price_excluding_optional_support",
         "primary_focus_subject",
+        "primary_focus_area",
         "students_reached",
         "resource_type",
         "fully_funded",
@@ -20,6 +28,14 @@
     ],
     "one_hot_encode_features": [
         "poverty_level",
+        "primary_focus_area",
+        "school_state",
+        "school_charter",
+        "school_magnet",
+        "school_year_round",
+        "teacher_teach_for_america",
+        "teacher_ny_teaching_fellow",
+        "teacher_prefix",
         "school_metro",
         "grade_level",
         "primary_focus_subject",
@@ -34,7 +50,6 @@
     ],
     "projects_imputation": {
         "students_reached": "mean",
-        "total_projects_in_city": "0",
         "fully_funded": "neg1"
     },
     "poverty_columns": {
@@ -53,8 +68,6 @@
     "quant_variables": [
         "total_price_excluding_optional_support",
         "students_reached",
-        "total_projects_in_city",
-        "total_projects_in_state",
         "percentage_reached_month_1",
         "percentage_reached_month_2",
         "percentage_reached_month_3"
