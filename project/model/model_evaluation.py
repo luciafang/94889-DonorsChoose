@@ -106,8 +106,74 @@ def baseline_predict(df, sort_col):
     # return y_test, y_pred
     return copy_df["fully_funded_pred"]
 
+def print_model_metrics(y_test, y_pred, model_type, pov_lvl):
+    """Print model metrics in a formatted table"""
+    accuracy = accuracy_score(y_test, y_pred)
+    precision = precision_score(y_test, y_pred)
+    recall = recall_score(y_test, y_pred)
+    
+    # Create a separator line
+    separator = "-" * 60
+    
+    # Print header
+    if pov_lvl != "none":
+        print(f"\n{separator}")
+        print(f"Poverty Level: {pov_lvl.upper()}")
+    print(f"{separator}")
+    print(f"Model: {model_type.upper()}")
+    print(f"{separator}")
+    
+    # Create metrics table
+    metrics_df = pd.DataFrame({
+        'Metric': ['Accuracy', 'Precision', 'Recall'],
+        'Value': [accuracy, precision, recall]
+    })
+    
+    # Format the values to 4 decimal places
+    metrics_df['Value'] = metrics_df['Value'].map('{:.4f}'.format)
+    
+    # Add padding for better alignment
+    col_width = max(len(word) for row in metrics_df.values for word in row) + 2
+    print(f"{'Metric':<{col_width}}{'Value':<{col_width}}")
+    print("-" * (col_width * 2))
+    
+    for _, row in metrics_df.iterrows():
+        print(f"{row['Metric']:<{col_width}}{row['Value']:<{col_width}}")
+    
+    print(separator)
+
+def print_summary_table(all_results):
+    """Print summary table for all models and poverty levels"""
+    print("\n" + "=" * 80)
+    print("SUMMARY OF ALL MODELS AND POVERTY LEVELS")
+    print("=" * 80)
+    
+    # Create a DataFrame for easy formatting
+    summary_data = []
+    for pov_lvl, models in all_results.items():
+        for model, metrics in models.items():
+            summary_data.append({
+                'Poverty Level': pov_lvl.upper(),
+                'Model': model.upper(),
+                'Accuracy': metrics['accuracy'],
+                'Precision': metrics['precision'],
+                'Recall': metrics['recall']
+            })
+    
+    summary_df = pd.DataFrame(summary_data)
+    
+    # Format numeric columns
+    for col in ['Accuracy', 'Precision', 'Recall']:
+        summary_df[col] = summary_df[col].map('{:.4f}'.format)
+    
+    print(summary_df.to_string(index=False))
+    print("=" * 80)
+    
+    # Save to CSV
+    summary_df.to_csv("../outputs/model_metrics_summary.csv", index=False)
+
+# Modify the evaluate function to use the new printing function
 def evaluate(test_df, classifier, model_type, pov_lvl):
-    print(model_type)
     X = test_df.copy()
     y = test_df["fully_funded"]
     if "fully_funded" in test_df.columns:
@@ -128,7 +194,8 @@ def evaluate(test_df, classifier, model_type, pov_lvl):
         y_pred_probs = []
     
     plot_roc_curve(y, y_pred, model_type, pov_lvl)
-    metrics(y, y_pred)
+    print_model_metrics(y, y_pred, model_type, pov_lvl)
+    
     return y, y_pred, y_pred_probs, X
 
 def plot_false_discovery_rate_ref(model_names, model_outputs, test_df, stem_cols, pov_lvl):
@@ -377,6 +444,7 @@ if __name__ == "__main__":
     split_by_poverty = config["split_by_poverty"]
     stem_cols = config["stem_cols"]
     test_results = {}
+    all_results = {}
 
     test_path = "../outputs/test_df.csv"
     test_df = pd.read_csv(test_path)
@@ -389,35 +457,52 @@ if __name__ == "__main__":
     regrets, years = evaluate_all_models_temporal(test_df, models, "none")
     print_regret_summary(regrets, years)
     
+    # Overall evaluation
+    all_results['none'] = {}
     for model_type in models:
         if model_type != "baseline":
             classifier = joblib.load("../outputs/" + model_type + f"_{pov_lvl}_poverty.pkl")
-
-        print(pov_lvl + " poverty level")
-        y, y_pred, y_pred_probs, X = evaluate(test_df, classifier, model_type, pov_lvl)
+        
+        y, y_pred, y_pred_probs, X = evaluate(test_df, classifier, model_type, "none")
         test_results[model_type + pov_lvl] = {"y_test": y, "y_pred": y_pred}
+        
+        # Store metrics
+        all_results['none'][model_type] = {
+            'accuracy': accuracy_score(y, y_pred),
+            'precision': precision_score(y, y_pred),
+            'recall': recall_score(y, y_pred)
+        }
+
     plot_false_discovery_rate_ref(models, test_results, X, stem_cols, pov_lvl)
     plot_recall_disparity(models, test_results, X, stem_cols, pov_lvl)   
-    print("#######################")
+
+    # Poverty level specific evaluation
     if split_by_poverty == "true":
         for pov_lvl, pov_col_name in config["poverty_columns"].items():
+            all_results[pov_lvl] = {}
             test_results = {}
-            classifier = ""
+            
             for model_type in models:
                 if model_type != "baseline":
                     classifier = joblib.load("../outputs/" + model_type + f"_{pov_lvl}_poverty.pkl")
-                print(pov_lvl + " poverty level")
+                
                 smote_test_path = f"../outputs/{pov_lvl}_pov_lvl_test_df.csv"
                 smote_test_df = pd.read_csv(smote_test_path)
-
+                
                 y, y_pred, y_pred_probs, X = evaluate(smote_test_df, classifier, model_type, pov_lvl)
                 test_results[model_type + pov_lvl] = {"y_test": y, "y_pred": y_pred}
+                
+                # Store metrics
+                all_results[pov_lvl][model_type] = {
+                    'accuracy': accuracy_score(y, y_pred),
+                    'precision': precision_score(y, y_pred),
+                    'recall': recall_score(y, y_pred)
+                }
+    
             plot_false_discovery_rate_ref(models, test_results, X, stem_cols, pov_lvl)
             plot_recall_disparity(models, test_results, X, stem_cols, pov_lvl)  
-            print("#######################")
             # test_results[model_type + pov_lvl] = {"y_test": y, "y_pred": y_pred}
 
-     
-
+    print_summary_table(all_results)
     print(f"Model evaluation complete.")
 
