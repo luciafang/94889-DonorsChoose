@@ -68,10 +68,10 @@ if __name__ == "__main__":
         if model_type == "baseline":
             continue
         elif model_type == "random_forest":
-            classifier = RandomForestClassifier(random_state=42)
+            classifier = RandomForestClassifier()
             cross_validate(train_df, model_type, classifier, pov_lvl, "fully_funded")
         elif model_type == "logistic_regression":
-            classifier = LogisticRegression(random_state=42, max_iter=1000)
+            classifier = LogisticRegression(max_iter=1000, solver="liblinear")
             cross_validate(train_df, model_type, classifier, pov_lvl, "fully_funded")
         elif model_type == "svm":
             classifier = svm.LinearSVC()
