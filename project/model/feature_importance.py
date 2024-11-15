@@ -14,38 +14,46 @@ def load_config(config_file="../config.json"):
 def save_feature_importance_plot(classifier, X, model_type, pov_lvl):
     importances = classifier.feature_importances_
 
-    indices = np.argsort(importances)
+    indices = np.argsort(importances)[-10:]  # Select top 10 features
+    top_features = np.array(X.columns)[indices]
+    top_importances = importances[indices]
 
-    fig, ax = plt.subplots(figsize=(12, 12))
-    ax.barh(range(len(importances)), importances[indices])
-    ax.set_yticks(range(len(importances)))
-
-    _ = ax.set_yticklabels(np.array(X.columns)[indices])
+    fig, ax = plt.subplots(figsize=(8, 6))
+    ax.barh(range(len(top_importances)), top_importances, color='skyblue')
+    ax.set_yticks(range(len(top_features)))
+    ax.set_yticklabels(top_features)
+    ax.set_xlabel('Feature Importance')
+    ax.set_title('Top 10 Feature Importances')
 
     plt.tight_layout()
 
-    if pov_lvl != "none":
-        fig.savefig("../figures/" + model_type + f"_{pov_lvl}_poverty_feature_importances.jpg")
-    else:
-        fig.savefig("../figures/" + model_type + f"_feature_importances.jpg")
+    # Save the plot
+    filename = f"../figures/{model_type}_{pov_lvl}_poverty_feature_importances.jpg" if pov_lvl != "none" \
+        else f"../figures/{model_type}_feature_importances.jpg"
+    fig.savefig(filename)
+    plt.close(fig)
 
 def save_cofficient_plot(classifier, X_train, model_type, pov_lvl):
-    # Get the coefficients and feature names
+
     coefficients = classifier.coef_[0]
-    feature_names = X_train.columns
+    indices = np.argsort(np.abs(coefficients))[-10:]  # Select top 10 by absolute value
+    top_features = np.array(X_train.columns)[indices]
+    top_coefficients = coefficients[indices]
 
-    # Create a horizontal bar chart
-    plt.figure(figsize=(12, 12))
-    plt.barh(feature_names, coefficients)
-    plt.xlabel('Coefficient Value')
-    plt.ylabel('Feature')
-    plt.title('Logistic Regression Coefficients')
+    fig, ax = plt.subplots(figsize=(8, 6))
+
+    colors = ['green' if coef > 0 else 'red' for coef in top_coefficients]  # Positive vs negative
+    ax.barh(top_features, top_coefficients, color=colors)
+    ax.set_xlabel('Coefficient Value')
+    ax.set_title('Top 10 Coefficients')
+
     plt.tight_layout()
-    if pov_lvl != "none":
-        plt.savefig("../figures/" + model_type + f"_{pov_lvl}_poverty_coeff_plot.jpg")
-    else:
-        plt.savefig("../figures/" + model_type + f"_coeff_plot.jpg")
 
+    # Save the plot
+    filename = f"../figures/{model_type}_{pov_lvl}_poverty_coeff_plot.jpg" if pov_lvl != "none" \
+        else f"../figures/{model_type}_coeff_plot.jpg"
+    fig.savefig(filename)
+    plt.close(fig)
 if __name__ == "__main__":
     config = load_config()
     models = config["models"]
