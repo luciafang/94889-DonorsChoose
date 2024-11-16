@@ -57,7 +57,6 @@ def cross_validate(df, model_type, classifier, pov_lvl, output_label):
 if __name__ == "__main__":
     train_path = "../outputs/train_df.csv"
     train_df = pd.read_csv(train_path)
-    train_df = train_df.set_index("projectid")
 
     config = load_config()
     models = config["models"]
