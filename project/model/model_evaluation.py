@@ -487,10 +487,11 @@ if __name__ == "__main__":
                 if model_type != "baseline":
                     classifier = joblib.load("../outputs/" + model_type + f"_{pov_lvl}_poverty.pkl")
                 
-                smote_test_path = f"../outputs/{pov_lvl}_pov_lvl_test_df.csv"
-                smote_test_df = pd.read_csv(smote_test_path)
+                pov_test_path = f"../outputs/{pov_lvl}_pov_lvl_test_df.csv"
+                pov_test_df = pd.read_csv(pov_test_path)
+                pov_test_df = pov_test_df.set_index("projectid")
                 
-                y, y_pred, y_pred_probs, X = evaluate(smote_test_df, classifier, model_type, pov_lvl)
+                y, y_pred, y_pred_probs, X = evaluate(pov_test_df, classifier, model_type, pov_lvl)
                 test_results[model_type + pov_lvl] = {"y_test": y, "y_pred": y_pred}
                 
                 # Store metrics
