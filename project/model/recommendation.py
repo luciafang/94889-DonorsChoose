@@ -117,5 +117,5 @@ if __name__ == "__main__":
     plt.title('Projects recommendation differences RF - LR')
     plt.xlabel('Poverty Level')
     plt.ylabel('Feature Category')
-    plt.savefig('../outputs/recommendation_difference_heatmap.png', format='png', dpi=300, bbox_inches='tight')
+    plt.savefig('../figures/recommendation_difference_heatmap.png', format='png', dpi=300, bbox_inches='tight')
     plt.close()
