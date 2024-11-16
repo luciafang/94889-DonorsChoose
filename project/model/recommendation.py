@@ -34,7 +34,9 @@ def get_recommended_projects(model_type, pov_lvl, quant_variables):
     projects_around_3_months_wtih_probs[quant_variables] = scaler.inverse_transform(projects_around_3_months_wtih_probs[quant_variables])
     projects_around_3_months_wtih_probs = projects_around_3_months_wtih_probs[projects_around_3_months_wtih_probs["total_price_excluding_optional_support"] > 100]
     # sort model output by prediction probability
-    sorted_output = projects_around_3_months_wtih_probs.sort_values('pred_prob')
+    sorted_output = projects_around_3_months_wtih_probs.sort_values('pred_prob', ascending=False)
+    # sort output by oldest posted date
+    sorted_output = sorted_output.sort_values('date_posted', ascending=True)
     # take top number of recommendations
     if pov_level == "low":
         top_recs = sorted_output[:100]
