@@ -11,7 +11,7 @@ def load_config(config_file="../config.json"):
         config = json.load(file)
     return config
 
-def get_recommended_projects(model_type, pov_lvl, quant_variables):
+def get_recommended_projects(projects_around_3_months, model_type, pov_level, quant_variables):
     """
     model_output: dataframe of output of model + the project info + prediction probabilities
     num_recommendations: number of projects to recommend from model_output
@@ -28,20 +28,50 @@ def get_recommended_projects(model_type, pov_lvl, quant_variables):
     projects_around_3_months_wtih_probs["pred"] = preds
 
     # unscale data to see original values
-    scaler_path = f"../outputs/{pov_lvl}_poverty_level_scaler.pkl"
+    scaler_path = f"../outputs/{pov_level}_poverty_level_scaler.pkl"
     scaler = joblib.load(scaler_path)
     # want to only recommend projects with at least $100
     projects_around_3_months_wtih_probs[quant_variables] = scaler.inverse_transform(projects_around_3_months_wtih_probs[quant_variables])
     projects_around_3_months_wtih_probs = projects_around_3_months_wtih_probs[projects_around_3_months_wtih_probs["total_price_excluding_optional_support"] > 100]
     # sort model output by prediction probability
     sorted_output = projects_around_3_months_wtih_probs.sort_values('pred_prob', ascending=False)
-    # sort output by oldest posted date
-    sorted_output = sorted_output.sort_values('date_posted', ascending=True)
+
     # take top number of recommendations
     if pov_level == "low":
-        top_recs = sorted_output[:100]
+        # sort output by oldest posted date
+        top_recs = sorted_output[:100].sort_values('date_posted', ascending=True)
     elif pov_level == "high":
-        top_recs = sorted_output[:200]
+        # sort output by oldest posted date
+        top_recs = sorted_output[:200].sort_values('date_posted', ascending=True)
+    output_path = f"../outputs/{model_type}_{pov_level}_pov_lvl_final_model_output.csv"
+    top_recs.to_csv(output_path)
+    
+    # return top number of recommendations
+    return top_recs
+
+def get_recommended_projects_baseline(projects_around_3_months, model_type, pov_level):
+    sorted_by_price = projects_around_3_months.sort_values('total_price_excluding_optional_support', ascending=False)
+    top_recs = pd.DataFrame()
+    if pov_level == "low":
+        # sort output by oldest posted date
+        top_recs = sorted_by_price[:100]
+    elif pov_level == "high":
+        # sort output by oldest posted date
+        top_recs = sorted_by_price[:200]
+    
+    # get values in column
+    price_df = top_recs['total_price_excluding_optional_support'].to_frame()
+
+    # use .3 bc 30% of projects don't get funded, so want to predict top 30 in sort_col as not getting funded
+    split_val = round(.3 * len(price_df))
+
+    top_recs["pred"] = 0
+    
+    # predict all the projects with a value less than the split_val as getting funded, should be about 70% of projects
+    top_recs.loc[top_recs['total_price_excluding_optional_support'] < price_df.iloc[split_val].values[0], "pred"] = 1
+
+    top_recs = top_recs.sort_values('date_posted', ascending=True)
+
     output_path = f"../outputs/{model_type}_{pov_level}_pov_lvl_final_model_output.csv"
     top_recs.to_csv(output_path)
     
@@ -81,9 +111,11 @@ if __name__ == "__main__":
         all_recs = {}
         for model_type in models:
             if model_type != "baseline":
-                recs = get_recommended_projects(model_type, pov_level, quant_variables)
-                all_recs[f"{model_type}_{pov_level}"] = recs
-                print(f"Saved recommendation model output for {model_type} and {pov_level} poverty level")
+                recs = get_recommended_projects(projects_around_3_months, model_type, pov_level, quant_variables)
+            else:
+                recs = get_recommended_projects_baseline(projects_around_3_months, model_type, pov_level)
+            all_recs[f"{model_type}_{pov_level}"] = recs
+            print(f"Saved recommendation model output for {model_type} and {pov_level} poverty level")
     # feature_categories = {
     #     'STEM': [
     #         'primary_focus_subject_Applied Sciences',
