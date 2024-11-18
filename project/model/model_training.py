@@ -17,6 +17,12 @@ def load_config(config_file="../config.json"):
     return config
 
 def evaluate_fold(y_test, y_pred):
+    """
+    evaluate the fold in the TimeSeriesSplit
+
+    y_test: the actual y values
+    y_pred: the predicted y values
+    """
     # accuracy, precision, recall
     accuracy = accuracy_score(y_test, y_pred)
     precision = precision_score(y_test, y_pred, zero_division=0)
@@ -25,6 +31,15 @@ def evaluate_fold(y_test, y_pred):
     return accuracy, precision, recall
 
 def cross_validate(df, model_type, classifier, pov_lvl, output_label):
+    """
+    runs cross validation with sklearn's TimeSeriesSplit
+
+    df: the dataframe containing the features and the outcome label
+    model_type: the name of the model type (string)
+    classifier: the actual classifier object
+    pov_lvl: the poverty level of the dataframe (string)
+    output_label: the name of the output label (string)
+    """
     print("Training: ", model_type, "for ", pov_lvl)
     X = df.copy()
     y = df[output_label]

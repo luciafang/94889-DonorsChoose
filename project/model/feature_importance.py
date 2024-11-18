@@ -12,6 +12,14 @@ def load_config(config_file="../config.json"):
     return config
 
 def save_feature_importance_plot(classifier, X, model_type, pov_lvl):
+    """"
+    Saves the feature importance plot for the model
+
+    classifier: the classifier object
+    X: the dataset used in training (Pandas dataframe)
+    model_type: the string name of the model
+    pov_lvl: the poverty level for the model
+    """
     importances = classifier.feature_importances_
 
     indices = np.argsort(importances)[-10:]  # Select top 10 features
@@ -34,7 +42,14 @@ def save_feature_importance_plot(classifier, X, model_type, pov_lvl):
     plt.close(fig)
 
 def save_cofficient_plot(classifier, X_train, model_type, pov_lvl):
+    """"
+    Saves the coefficient plot for the model
 
+    classifier: the classifier object
+    X_train: the dataset used in training (Pandas dataframe)
+    model_type: the string name of the model
+    pov_lvl: the poverty level for the model
+    """
     coefficients = classifier.coef_[0]
     indices = np.argsort(np.abs(coefficients))[-10:]  # Select top 10 by absolute value
     top_features = np.array(X_train.columns)[indices]
@@ -54,6 +69,7 @@ def save_cofficient_plot(classifier, X_train, model_type, pov_lvl):
         else f"../figures/{model_type}_coeff_plot.jpg"
     fig.savefig(filename)
     plt.close(fig)
+
 if __name__ == "__main__":
     config = load_config()
     models = config["models"]
@@ -62,13 +78,15 @@ if __name__ == "__main__":
     df_path = "../outputs/train_df.csv"
     df = pd.read_csv(df_path)
     X = df.copy()
+
+    # removes columns not used in training
     if "fully_funded" in df.columns:
         X = X.drop(["fully_funded"] , axis=1)
     if "date_posted" in df.columns:
         X = X.drop(["date_posted"] , axis=1)
+
     if split_by_poverty == "true":
         for pov_lvl, pov_col_name in config["poverty_columns"].items():
-            # X_res already removed projectid column thus removing it
             pov_train_df_path = f"../outputs/{pov_lvl}_pov_lvl_train_df.csv"
             pov_train_df = pd.read_csv(pov_train_df_path)
             if "fully_funded" in pov_train_df.columns:

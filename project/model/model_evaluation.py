@@ -13,6 +13,14 @@ def load_config(config_file="../config.json"):
     return config
 
 def plot_roc_curve(y_test, y_pred, model_type, pov_lvl):
+    """
+    Plots ROC curve for output
+
+    y_test: actual outcome labels for test set
+    y_pred: predicted outcome labels for test set
+    model_type: the string name of the model
+    pov_lvl: the poverty level for the model
+    """
     fpr, tpr, thresholds = roc_curve(y_test, y_pred)
     roc_auc = auc(fpr, tpr)
 
@@ -25,6 +33,12 @@ def plot_roc_curve(y_test, y_pred, model_type, pov_lvl):
     plt.clf()
 
 def metrics(y_test, y_pred):
+    """
+    Prints accuracy, precision, and recall for model output
+
+    y_test: actual outcome labels for test set
+    y_pred: predicted outcome labels for test set
+    """
     accuracy = accuracy_score(y_test, y_pred)
     precision = precision_score(y_test, y_pred)
     recall = recall_score(y_test, y_pred)
@@ -33,8 +47,17 @@ def metrics(y_test, y_pred):
     print("Precision:", precision)
     print("Recall:", recall)
 
-#Find precision and recall (true values, scores, k_increase)
+#F ind precision and recall (true values, scores, k_increase)
 def pre_rec(y_t, y_s, model_type, pov_lvl, k_inc=0.01):
+    """
+    Plots PR-k curve for output
+
+    y_t: actual outcome labels for test set
+    y_s: predicted outcome label scores for test set
+    model_type: the string name of the model
+    pov_lvl: the poverty level for the model
+    k_inc: the increase percentage for k
+    """
     # Sort scores and true labels based on the predicted scores (descending order)
     sorted_i = np.argsort(y_s)[::-1]
     y_true_s = np.array(y_t)[sorted_i]
@@ -87,6 +110,12 @@ def pre_rec(y_t, y_s, model_type, pov_lvl, k_inc=0.01):
     return (precision_k,recall_k)
 
 def baseline_predict(df, sort_col):
+    """
+    Predicts outcome for baseline model
+
+    df: dataframe of test set
+    sort_col: the column to sort the test set by for predictions
+    """
     copy_df = df.copy()
 
     # use specified column sort_col to sort dataset and predict outcome variables
@@ -174,6 +203,13 @@ def print_summary_table(all_results):
 
 # Modify the evaluate function to use the new printing function
 def evaluate(test_df, classifier, model_type, pov_lvl):
+    """
+    Evaluate test dataset for specified classifier
+
+    classifier: the classifier object
+    model_type: the string name of the model
+    pov_lvl: the poverty level for the model
+    """
     X = test_df.copy()
     y = test_df["fully_funded"]
     if "fully_funded" in test_df.columns:
@@ -199,6 +235,15 @@ def evaluate(test_df, classifier, model_type, pov_lvl):
     return y, y_pred, y_pred_probs, X
 
 def plot_false_discovery_rate_ref(model_names, model_outputs, test_df, stem_cols, pov_lvl):
+    """
+    Plots FDR disparity between the models
+
+    model_names: list of the models
+    model_outputs: dictionary of outputs of the models
+    test_df: dataframe of test set
+    stem_cols: list of primary focus subjects that are STEM
+    pov_lvl: the poverty level for the model
+    """
     test_df["is_stem"] = test_df[stem_cols].any(axis=1)
     non_stem = [col for col in test_df.columns if "primary_focus_subject" in col and col not in stem_cols]
     test_df["not_stem"] = test_df[non_stem].any(axis=1)
@@ -244,6 +289,15 @@ def plot_false_discovery_rate_ref(model_names, model_outputs, test_df, stem_cols
     plt.clf()
 
 def plot_recall_disparity(model_names, model_outputs, test_df, stem_cols, pov_lvl):
+    """
+    Plots recall disparity between the models
+
+    model_names: list of the models
+    model_outputs: dictionary of outputs of the models
+    test_df: dataframe of test set
+    stem_cols: list of primary focus subjects that are STEM
+    pov_lvl: the poverty level for the model
+    """
     test_df["is_stem"] = test_df[stem_cols].any(axis=1)
     non_stem = [col for col in test_df.columns if "primary_focus_subject" in col and col not in stem_cols]
     test_df["not_stem"] = test_df[non_stem].any(axis=1)

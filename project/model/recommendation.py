@@ -13,8 +13,13 @@ def load_config(config_file="../config.json"):
 
 def get_recommended_projects(projects_around_3_months, model_type, pov_level, quant_variables):
     """
-    model_output: dataframe of output of model + the project info + prediction probabilities
-    num_recommendations: number of projects to recommend from model_output
+    gets the projects to recommend from the model output 
+
+    projects_around_3_months: dataframe of output of model + the project info + prediction 
+    probabilities for the projects elgible for recommendation
+    model_type: the string name of the type of model
+    pov_level: the string name of the poverty level of the model output
+    quant_variables: the names of the quantitative variables
     """
     if "svm" in model_type:
         classifier = joblib.load("../outputs/" + model_type + f"_calibrated_{pov_level}_poverty.pkl")
@@ -50,6 +55,14 @@ def get_recommended_projects(projects_around_3_months, model_type, pov_level, qu
     return top_recs
 
 def get_recommended_projects_baseline(projects_around_3_months, model_type, pov_level):
+    """
+    gets the projects to recommend from the model output for the baseline model
+
+    projects_around_3_months: dataframe of output of model + the project info + prediction 
+    probabilities for the projects elgible for recommendation
+    model_type: the string name of the type of model
+    pov_level: the string name of the poverty level of the model output
+    """
     sorted_by_price = projects_around_3_months.sort_values('total_price_excluding_optional_support', ascending=False)
     top_recs = pd.DataFrame()
     if pov_level == "low":
@@ -80,6 +93,8 @@ def get_recommended_projects_baseline(projects_around_3_months, model_type, pov_
 
 def get_projects_at_3_months(date_for_recommendation, df):
     """
+    gets the projects posted around 3 months before the date the recommendation is being made
+    
     date_for_recommendation: date to make recommendation on for the month
     df: dataframe to get the projects posted around 3 months prior to recommendation date
     """
