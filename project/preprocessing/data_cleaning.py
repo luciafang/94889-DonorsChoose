@@ -119,6 +119,12 @@ def one_hot_encode(df, categorical_features):
     return df_encoded
 
 def combine_poverty_levels(df, replacements):
+    """
+    replaces poverty level values in poverty level column with sepcified replacement
+    df: pandas dataframe 
+    replacements: dictionary with the keys being the poverty levels being replaced and the values
+    being the poverty levels the key names are being replaced with
+    """
     for pov_lvl in replacements:
         df['poverty_level'] = df['poverty_level'].replace(pov_lvl, replacements[pov_lvl])
     return df
@@ -136,6 +142,7 @@ if __name__ == "__main__":
     # Clean the dataset
     df_cleaned = clean_and_fill_data(df)
 
+    # combine low and moderate poverty to low and high and highest poverty to high
     df_cleaned = combine_poverty_levels(df, config["poverty_level_replacements"])
 
     # One-hot encode specified categorical features
