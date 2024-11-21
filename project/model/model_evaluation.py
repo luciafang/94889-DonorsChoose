@@ -127,13 +127,13 @@ def baseline_predict(df, sort_col):
     # use .3 bc 30% of projects don't get funded, so want to predict top 30 in sort_col as not getting funded
     split_val = round(.3 * len(sort_col_df))
 
-    copy_df["fully_funded_pred"] = 0
+    copy_df["not_fully_funded_pred"] = 1
     
     # predict all the projects with a value less than the split_val as getting funded, should be about 70% of projects
-    copy_df.loc[copy_df[sort_col] < sort_col_df.iloc[split_val].values[0], "fully_funded_pred"] = 1
+    copy_df.loc[copy_df[sort_col] < sort_col_df.iloc[split_val].values[0], "not_fully_funded_pred"] = 0
 
     # return y_test, y_pred
-    return copy_df["fully_funded_pred"]
+    return copy_df["not_fully_funded_pred"]
 
 def print_model_metrics(y_test, y_pred, model_type, pov_lvl):
     """Print model metrics in a formatted table"""
@@ -234,7 +234,7 @@ def evaluate(test_df, classifier, model_type, pov_lvl):
     
     return y, y_pred, y_pred_probs, X
 
-def plot_false_discovery_rate_ref(model_names, model_outputs, test_df, stem_cols, pov_lvl):
+def plot_false_discovery_rate_ref(model_names, model_outputs, test_df, protected_cols, protected_col_name, pov_lvl):
     """
     Plots FDR disparity between the models
 
@@ -244,11 +244,11 @@ def plot_false_discovery_rate_ref(model_names, model_outputs, test_df, stem_cols
     stem_cols: list of primary focus subjects that are STEM
     pov_lvl: the poverty level for the model
     """
-    test_df["is_stem"] = test_df[stem_cols].any(axis=1)
-    non_stem = [col for col in test_df.columns if "primary_focus_subject" in col and col not in stem_cols]
-    test_df["not_stem"] = test_df[non_stem].any(axis=1)
-    ref_mask = test_df["not_stem"] == True
-    protect_mask = test_df["is_stem"] == True
+    test_df["is_protected"] = test_df[protected_cols].any(axis=1)
+    non_protected_cols = [col for col in test_df.columns if protected_col_name in col and col not in protected_cols]
+    test_df["not_protected"] = test_df[non_protected_cols].any(axis=1)
+    ref_mask = test_df["not_protected"] == True
+    protect_mask = test_df["is_protected"] == True
     model_fdrs = []
     model_prec = []
     for output in model_outputs:
@@ -281,14 +281,14 @@ def plot_false_discovery_rate_ref(model_names, model_outputs, test_df, stem_cols
     plt.ylabel('False Discovery Rate (FDR) Disparity')
     plt.title('FDR Disparity vs Precision')
     plt.legend()
-    plt.xlim(0, 1)
-    plt.ylim(0, 1.5)
+    plt.xlim(0, 2)
+    plt.ylim(0, 2) 
 
     # Save the plot
-    plt.savefig("../figures/" + pov_lvl + "_fdr_disparity_plot.jpg")
+    plt.savefig("../figures/" + pov_lvl + "_" + protected_col_name + "_fdr_disparity_plot.jpg")
     plt.clf()
 
-def plot_recall_disparity(model_names, model_outputs, test_df, stem_cols, pov_lvl):
+def plot_recall_disparity(model_names, model_outputs, test_df, protected_cols, protected_col_name, pov_lvl):
     """
     Plots recall disparity between the models
 
@@ -298,11 +298,11 @@ def plot_recall_disparity(model_names, model_outputs, test_df, stem_cols, pov_lv
     stem_cols: list of primary focus subjects that are STEM
     pov_lvl: the poverty level for the model
     """
-    test_df["is_stem"] = test_df[stem_cols].any(axis=1)
-    non_stem = [col for col in test_df.columns if "primary_focus_subject" in col and col not in stem_cols]
-    test_df["not_stem"] = test_df[non_stem].any(axis=1)
-    ref_mask = test_df["not_stem"] == True
-    protect_mask = test_df["is_stem"] == True
+    test_df["is_protected"] = test_df[protected_cols].any(axis=1)
+    non_protected_cols = [col for col in test_df.columns if protected_col_name in col and col not in protected_cols]
+    test_df["not_protected"] = test_df[non_protected_cols].any(axis=1)
+    ref_mask = test_df["not_protected"] == True
+    protect_mask = test_df["is_protected"] == True
 
     model_recalls = []
     model_prec = []
@@ -331,11 +331,11 @@ def plot_recall_disparity(model_names, model_outputs, test_df, stem_cols, pov_lv
     plt.ylabel('Recall Disparity')
     plt.title('Recall Disparity vs Precision')
     plt.legend()
-    plt.xlim(0, 1.2)
-    plt.ylim(0, 1.2)
+    plt.xlim(0, 2)
+    plt.ylim(0, 2)
 
     # Save the plot
-    plt.savefig("../figures/" + pov_lvl + "_recall_disparity_plot.jpg")
+    plt.savefig("../figures/" + pov_lvl + "_" + protected_col_name + "_recall_disparity_plot.jpg")
     plt.clf()
 
 def collect_temporal_performance(test_df, classifier, model_type):
@@ -498,6 +498,7 @@ if __name__ == "__main__":
 
     split_by_poverty = config["split_by_poverty"]
     stem_cols = config["stem_cols"]
+    tech_cols = config["tech_cols"]
     test_results = {}
     all_results = {}
 
@@ -528,8 +529,11 @@ if __name__ == "__main__":
             'recall': recall_score(y, y_pred)
         }
 
-    plot_false_discovery_rate_ref(models, test_results, X, stem_cols, pov_lvl)
-    plot_recall_disparity(models, test_results, X, stem_cols, pov_lvl)   
+    plot_false_discovery_rate_ref(models, test_results, X, stem_cols, "primary_focus_subject", pov_lvl)
+    plot_recall_disparity(models, test_results, X, stem_cols, "primary_focus_subject", pov_lvl)   
+
+    plot_false_discovery_rate_ref(models, test_results, X, tech_cols, "resource_type", pov_lvl)
+    plot_recall_disparity(models, test_results, X, tech_cols, "resource_type", pov_lvl)
 
     # Poverty level specific evaluation
     if split_by_poverty == "true":
@@ -555,8 +559,11 @@ if __name__ == "__main__":
                     'recall': recall_score(y, y_pred)
                 }
     
-            plot_false_discovery_rate_ref(models, test_results, X, stem_cols, pov_lvl)
-            plot_recall_disparity(models, test_results, X, stem_cols, pov_lvl)  
+            plot_false_discovery_rate_ref(models, test_results, X, stem_cols, "primary_focus_subject", pov_lvl)
+            plot_recall_disparity(models, test_results, X, stem_cols, "primary_focus_subject", pov_lvl)   
+
+            plot_false_discovery_rate_ref(models, test_results, X, tech_cols, "resource_type", pov_lvl)
+            plot_recall_disparity(models, test_results, X, tech_cols, "resource_type", pov_lvl)  
             # test_results[model_type + pov_lvl] = {"y_test": y, "y_pred": y_pred}
 
     print_summary_table(all_results)

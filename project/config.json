@@ -79,5 +79,8 @@
         "primary_focus_subject_Mathematics",
         "primary_focus_subject_Nutrition",
         "primary_focus_subject_Health & Wellness"
+    ],
+    "tech_cols": [
+        "resource_type_Technology"
     ]
 }
