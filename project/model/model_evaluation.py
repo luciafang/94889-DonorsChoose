@@ -491,6 +491,44 @@ def print_regret_summary(regrets, months, pov_lvl=""):
     # Save to CSV
     summary_df.to_csv(f"../outputs/regret_summary{('_' + pov_lvl) if pov_lvl else ''}_by_month.csv", 
                       index=False)
+    
+def plot_model_bias(model_type, metric, protected_groups, protected_group_names, output, test_df, bias_categories, pov_lvl):
+    # set up plot
+    y = np.arange(len(bias_categories))
+    plt.figure(figsize=(6, 4)) 
+
+    all_scores = []
+    for i in range(len(protected_groups)):
+        grp = protected_groups[i]
+        name = protected_group_names[i]
+        
+        test_df["is_protected"] = test_df[grp].any(axis=1)
+        non_protected_cols = [col for col in test_df.columns if name in col and col not in grp]
+        test_df["not_protected"] = test_df[non_protected_cols].any(axis=1)
+        ref_mask = test_df["not_protected"] == True
+        protect_mask = test_df["is_protected"] == True
+
+        if metric == "recall":
+            score_ref = recall_score(output["y_test"][ref_mask], output["y_pred"][ref_mask])
+            score_protect = recall_score(output["y_test"][protect_mask], output["y_pred"][protect_mask])
+
+        if metric == "precision":
+            score_ref = recall_score(output["y_test"][ref_mask], output["y_pred"][ref_mask])
+            score_protect = recall_score(output["y_test"][protect_mask], output["y_pred"][protect_mask])
+
+        all_scores.append(score_ref)
+        all_scores.append(score_protect)
+    # Plot for short-term success (left)
+    plt.barh(y, all_scores, color=['lightgreen', 'lightblue', 'lightgreen', 'lightblue'])
+    plt.yticks(y, bias_categories)
+    plt.xlabel('Recall')
+    plt.title(f"{model_type} {pov_lvl} poverty level")
+    plt.tight_layout()
+    
+     # Save the plot
+    plt.savefig(f"../figures/{pov_lvl}_{model_type}_{metric}_bias_plot.jpg")
+    plt.clf()
+
 
 if __name__ == "__main__":
     config = load_config()
@@ -558,13 +596,16 @@ if __name__ == "__main__":
                     'precision': precision_score(y, y_pred),
                     'recall': recall_score(y, y_pred)
                 }
+
+                if model_type == "svm":
+                    plot_model_bias(model_type, "recall", [stem_cols, tech_cols], ["primary_focus_subject", "resource_type"], test_results[model_type + pov_lvl], pov_test_df, ["non stem", "stem", "non tech", "tech"], pov_lvl)
+                    plot_model_bias(model_type, "precision", [stem_cols, tech_cols], ["primary_focus_subject", "resource_type"], test_results[model_type + pov_lvl], pov_test_df, ["non stem", "stem", "non tech", "tech"], pov_lvl)
     
             plot_false_discovery_rate_ref(models, test_results, X, stem_cols, "primary_focus_subject", pov_lvl)
             plot_recall_disparity(models, test_results, X, stem_cols, "primary_focus_subject", pov_lvl)   
 
             plot_false_discovery_rate_ref(models, test_results, X, tech_cols, "resource_type", pov_lvl)
             plot_recall_disparity(models, test_results, X, tech_cols, "resource_type", pov_lvl)  
-            # test_results[model_type + pov_lvl] = {"y_test": y, "y_pred": y_pred}
 
     print_summary_table(all_results)
     print(f"Model evaluation complete.")
