@@ -518,7 +518,7 @@ def plot_model_bias(model_type, metric, protected_groups, protected_group_names,
 
         all_scores.append(score_ref)
         all_scores.append(score_protect)
-    # Plot for short-term success (left)
+
     plt.barh(y, all_scores, color=['lightgreen', 'lightblue', 'lightgreen', 'lightblue'])
     plt.yticks(y, bias_categories)
     plt.xlabel('Recall')
