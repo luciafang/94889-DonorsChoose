@@ -35,11 +35,18 @@ def get_recommended_projects(projects_around_3_months, model_type, pov_level, qu
     # unscale data to see original values
     scaler_path = f"../outputs/{pov_level}_poverty_level_scaler.pkl"
     scaler = joblib.load(scaler_path)
-    # want to only recommend projects with at least $100
+    
+    # want to only recommend projects with at least $100 price
     projects_around_3_months_wtih_probs[quant_variables] = scaler.inverse_transform(projects_around_3_months_wtih_probs[quant_variables])
     projects_around_3_months_wtih_probs = projects_around_3_months_wtih_probs[projects_around_3_months_wtih_probs["total_price_excluding_optional_support"] > 100]
+
+    # want to only recommend projects that have at least 50% funding
+    projects_around_3_months_wtih_probs = projects_around_3_months_wtih_probs[projects_around_3_months_wtih_probs["percentage_reached_month_3"] > 50]
+
     # sort model output by prediction probability
-    sorted_output = projects_around_3_months_wtih_probs.sort_values('pred_prob', ascending=False)
+    projects_with_impact = projects_around_3_months_wtih_probs.copy()
+    projects_with_impact["expected_impact"] = projects_around_3_months_wtih_probs["pred_prob"] * projects_around_3_months_wtih_probs["students_reached"]
+    sorted_output = projects_with_impact.sort_values('expected_impact', ascending=False)
 
     # take top number of recommendations
     if pov_level == "low":
@@ -131,63 +138,3 @@ if __name__ == "__main__":
                 recs = get_recommended_projects_baseline(projects_around_3_months, model_type, pov_level)
             all_recs[f"{model_type}_{pov_level}"] = recs
             print(f"Saved recommendation model output for {model_type} and {pov_level} poverty level")
-    # feature_categories = {
-    #     'STEM': [
-    #         'primary_focus_subject_Applied Sciences',
-    #         'primary_focus_subject_Environmental Science',
-    #         'primary_focus_subject_Health & Life Science',
-    #         'primary_focus_subject_Mathematics',
-    #         'primary_focus_subject_Nutrition',
-    #         'primary_focus_subject_Health & Wellness'
-    #     ],
-    #     'Non-STEM': [
-    #         col for col in all_recommendations.columns if col.startswith('primary_focus_subject_')
-    #                                                       and col not in [
-    #                                                           'primary_focus_subject_Applied Sciences',
-    #                                                           'primary_focus_subject_Environmental Science',
-    #                                                           'primary_focus_subject_Health & Life Science',
-    #                                                           'primary_focus_subject_Mathematics',
-    #                                                           'primary_focus_subject_Nutrition',
-    #                                                           'primary_focus_subject_Health & Wellness'
-    #                                                       ]
-    #     ],
-    #     'Resource Type': [col for col in all_recommendations.columns if col.startswith('resource_type_')],
-    # }
-
-    # poverty_levels = ["low", "high"]
-
-    # heatmap_data = []
-
-    # for pov_level in poverty_levels:
-    #     for category, features in feature_categories.items():
-    #         rf_log_diff = (top_recommendations[(pov_level, 'random_forest')][features].sum() -
-    #                        top_recommendations[(pov_level, 'logistic_regression')][features].sum())
-    #         # pov_data = all_recommendations[all_recommendations[f'poverty_level_{pov_level} poverty'] == 1]
-    #         # rf_log_diff = pov_data['proba_random_forest'] - pov_data['proba_logistic_regression']
-
-    #         sum_diff = rf_log_diff.sum()  # Mean difference in funding probability for this category
-
-    #         heatmap_data.append({
-    #             'poverty_level': pov_level,
-    #             'feature_category': category,
-    #             'total_difference': sum_diff
-    #         })
-
-    # heatmap_df = pd.DataFrame(heatmap_data)
-
-    # poverty_level_order = ["high", "low"]
-    # feature_category_order = ["STEM", "Non-STEM", "Resource Type"]
-    # heatmap_pivot = heatmap_df.pivot(index="feature_category", columns="poverty_level", values="total_difference")
-    # heatmap_pivot = heatmap_pivot.reindex(index=feature_category_order, columns=poverty_level_order)
-
-    # plt.figure(figsize=(5, 4))
-    # sns.heatmap(heatmap_pivot,
-    #             # cmap = 'rocket',
-    #             cmap='RdBu_r',
-    #             cbar=False,
-    #             annot=True, center=0)
-    # plt.title('Projects recommendation differences RF - LR')
-    # plt.xlabel('Poverty Level')
-    # plt.ylabel('Feature Category')
-    # plt.savefig('../outputs/recommendation_difference_heatmap.png', format='png', dpi=300, bbox_inches='tight')
-    # plt.close()
