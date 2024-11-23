@@ -2,7 +2,7 @@ import sklearn as sk
 import pandas as pd
 from imblearn.over_sampling import SMOTE
 import json
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import StandardScaler, MinMaxScaler
 import joblib
 
 def load_config(config_file="../config.json"):
@@ -89,7 +89,7 @@ def scale_quant_vars(df, quant_variables, pov_lvl="none"):
 
     quant_features = quant_variables.columns
 
-    scaler = StandardScaler()
+    scaler = MinMaxScaler()
     scaled_quant = scaler.fit_transform(quant_variables)
 
     scaler_path = f"../outputs/{pov_lvl}_poverty_level_scaler.pkl"
