@@ -99,6 +99,6 @@ if __name__ == "__main__":
                 pov_train_df = pd.read_csv(pov_train_df_path)
                 cross_validate(pov_train_df, model_type, classifier, pov_lvl, "fully_funded")
                 if "svm" in model_type:
-                    cross_validate(pov_train_df, model_type + "_calibrated", calib_classifier, pov_lvl, "fully_funded")
+                    cross_validate(pov_train_df, model_type + "_calibrated", calib_classifier, pov_lvl, " ")
 
     print(f"Model training complete.")
