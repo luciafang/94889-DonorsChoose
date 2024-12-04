@@ -211,9 +211,9 @@ def evaluate(test_df, classifier, model_type, pov_lvl):
     pov_lvl: the poverty level for the model
     """
     X = test_df.copy()
-    y = test_df["fully_funded"]
-    if "fully_funded" in test_df.columns:
-        X = X.drop(["fully_funded"] , axis=1)
+    y = test_df["not_fully_funded"]
+    if "not_fully_funded" in test_df.columns:
+        X = X.drop(["not_fully_funded"] , axis=1)
     if "date_posted" in test_df.columns:
         X = X.drop(["date_posted"] , axis=1)
 
@@ -359,11 +359,11 @@ def collect_temporal_performance(test_df, classifier, model_type):
         if len(month_data) > 0:
             if model_type != "baseline":
                 # Drop date_posted and fully_funded for prediction
-                X = month_data.drop(["fully_funded", "date_posted"], axis=1)
-                y_true = month_data["fully_funded"]
+                X = month_data.drop(["not_fully_funded", "date_posted"], axis=1)
+                y_true = month_data["not_fully_funded"]
                 y_pred = classifier.predict(X)
             else:
-                y_true = month_data["fully_funded"]
+                y_true = month_data["not_fully_funded"]
                 y_pred = np.random.choice([0, 1], size=len(y_true))
             
             performance = recall_score(y_true, y_pred)

@@ -13,7 +13,7 @@ def load_config(config_file="../config.json"):
 
 def smote_balancing(df, pov_col_name, config):
     '''
-    Use SMOTE to resample/upsample data to balance the two classes (fully_funded)
+    Use SMOTE to resample/upsample data to balance the two classes (not_fully_funded)
     so there is an even number for the specified poverty level
 
     df: the dataframe containing the features and outcome label
@@ -29,8 +29,8 @@ def smote_balancing(df, pov_col_name, config):
     date_posted_col = df["date_posted"]
 
     # create X and y
-    X = df.drop(['fully_funded', 'date_posted'], axis=1)
-    y = df['fully_funded']
+    X = df.drop(['not_fully_funded', 'date_posted'], axis=1)
+    y = df['not_fully_funded']
 
     # get only the rows with the specified poverty level
     new_X = X[X[pov_col_name] == True].drop(columns=[
@@ -74,7 +74,7 @@ def smote_balancing(df, pov_col_name, config):
 
     # assign new dates and new balanced outcome variable
     X_res["date_posted"] = final_dates
-    X_res["fully_funded"] = y_res
+    X_res["not_fully_funded"] = y_res
     return X_res.sort_values('date_posted')
 
 def scale_quant_vars(df, quant_variables, pov_lvl="none"):

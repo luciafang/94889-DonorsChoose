@@ -3,6 +3,7 @@ import joblib
 import json
 import seaborn as sns
 import matplotlib.pyplot as plt
+from model_evaluation import metrics
 
 
 def load_config(config_file="../config.json"):
@@ -25,7 +26,7 @@ def get_recommended_projects(projects_around_3_months, model_type, pov_level, qu
         classifier = joblib.load("../outputs/" + model_type + f"_calibrated_{pov_level}_poverty.pkl")
     else:
         classifier = joblib.load(f"../outputs/{model_type}_{pov_level}_poverty.pkl")
-    X_test = projects_around_3_months.drop(['fully_funded', 'date_posted', 'months_posted', 'projectid'], axis=1)
+    X_test = projects_around_3_months.drop(['not_fully_funded', 'date_posted', 'months_posted', 'projectid'], axis=1)
     pred_probs = classifier.predict_proba(X_test)[:, 1]
     preds = classifier.predict(X_test)
     projects_around_3_months_wtih_probs = projects_around_3_months.copy()
@@ -40,8 +41,8 @@ def get_recommended_projects(projects_around_3_months, model_type, pov_level, qu
     projects_around_3_months_wtih_probs[quant_variables] = scaler.inverse_transform(projects_around_3_months_wtih_probs[quant_variables])
     projects_around_3_months_wtih_probs = projects_around_3_months_wtih_probs[projects_around_3_months_wtih_probs["total_price_excluding_optional_support"] > 100]
 
-    # want to only recommend projects that have at least 50% funding
-    projects_around_3_months_wtih_probs = projects_around_3_months_wtih_probs[projects_around_3_months_wtih_probs["percentage_reached_month_3"] > 50]
+    # want to only recommend projects that have at least 50% funding HEREIN LIES THE PROBLEM
+    projects_around_3_months_wtih_probs = projects_around_3_months_wtih_probs[projects_around_3_months_wtih_probs["percentage_reached_month_3"] > 20]
 
     # sort model output by prediction probability
     projects_with_impact = projects_around_3_months_wtih_probs.copy()
@@ -113,6 +114,9 @@ def get_projects_at_3_months(date_for_recommendation, df):
     projects_around_3_months = projects_before_rec_date[projects_before_rec_date['months_posted'] == 3]
     return projects_around_3_months
 
+def eval_recommendation(y_pred, y_test):
+    metrics(y_test, y_pred)
+
 if __name__ == "__main__":
     config = load_config()
 
@@ -137,4 +141,8 @@ if __name__ == "__main__":
             else:
                 recs = get_recommended_projects_baseline(projects_around_3_months, model_type, pov_level)
             all_recs[f"{model_type}_{pov_level}"] = recs
+            print(f"Metrics for {pov_level} poverty level and {model_type}")
+            y_pred = recs["pred"]
+            y_test = recs["not_fully_funded"]
+            eval_recommendation(y_pred, y_test)
             print(f"Saved recommendation model output for {model_type} and {pov_level} poverty level")

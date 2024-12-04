@@ -23,7 +23,7 @@ def split_data(df, drop_year, test_year):
     train_df = new_df[new_df['date_posted'].str[:4] != test_year]
     
     # for projects posted in september, if not fully funded, drop
-    train_df = train_df.drop(train_df[(train_df['date_posted'].str[5:7] == '09') & (train_df['fully_funded'] == 0)].index)
+    train_df = train_df.drop(train_df[(train_df['date_posted'].str[5:7] == '09') & (train_df['not_fully_funded'] == 0)].index)
 
     # return training data and testing data sets
     return train_df.sort_values(by="date_posted"), test_df.sort_values(by="date_posted")
