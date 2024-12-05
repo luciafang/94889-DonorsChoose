@@ -55,7 +55,7 @@ def clean_and_fill_data(df):
             df["school_metro"] = df.apply(lambda project: project["school_metro"] if isinstance(project["school_metro"], str) else get_school_metro(project, df_metro), axis=1)
             
             print(f"Filled {nulls} missing values in {imp} with estimate from ChatGPT.")
-        # negative 1 fill for unknown fully_funded rows (anything that is 2014)
+        # negative 1 fill for unknown not_fully_funded rows (anything that is 2014)
         elif projects_imputation[imp] == "neg1":
             df[imp] = df[imp].fillna(-1)
             print(f"Filled {nulls} missing values in {imp} with -1.")

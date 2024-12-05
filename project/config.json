@@ -50,7 +50,7 @@
     ],
     "projects_imputation": {
         "students_reached": "mean",
-        "fully_funded": "neg1"
+        "not_fully_funded": "neg1"
     },
     "poverty_columns": {
         "low": "poverty_level_low poverty",
