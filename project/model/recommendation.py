@@ -29,6 +29,7 @@ def get_recommended_projects(projects_around_3_months, model_type, pov_level, qu
     X_test = projects_around_3_months.drop(['not_fully_funded', 'date_posted', 'months_posted', 'projectid'], axis=1)
     pred_probs = classifier.predict_proba(X_test)[:, 1]
     preds = classifier.predict(X_test)
+    print(len(projects_around_3_months))
     projects_around_3_months_wtih_probs = projects_around_3_months.copy()
     projects_around_3_months_wtih_probs["pred_prob"] = pred_probs
     projects_around_3_months_wtih_probs["pred"] = preds
@@ -42,7 +43,7 @@ def get_recommended_projects(projects_around_3_months, model_type, pov_level, qu
     projects_around_3_months_wtih_probs = projects_around_3_months_wtih_probs[projects_around_3_months_wtih_probs["total_price_excluding_optional_support"] > 100]
 
     # want to only recommend projects that have at least 50% funding HEREIN LIES THE PROBLEM
-    projects_around_3_months_wtih_probs = projects_around_3_months_wtih_probs[projects_around_3_months_wtih_probs["percentage_reached_month_3"] > 20]
+    # projects_around_3_months_wtih_probs = projects_around_3_months_wtih_probs[projects_around_3_months_wtih_probs["percentage_reached_month_3"] > 20]
 
     # sort model output by prediction probability
     projects_with_impact = projects_around_3_months_wtih_probs.copy()

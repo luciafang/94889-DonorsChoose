@@ -27,7 +27,7 @@ def plot_roc_curve(y_test, y_pred, model_type, pov_lvl):
     plt.plot(fpr, tpr, label=f'AUC = {roc_auc:.2f}')
     plt.xlabel('False Positive Rate')
     plt.ylabel('True Positive Rate')
-    plt.title(f"{model_type} ROC Curve with Time Series Cross-Validation")
+    plt.title(f"{model_type.replace("_", " ").title()} Model {pov_lvl.capitalize()} Poverty Level ROC Curve")
     plt.legend(loc='lower right')
     plt.savefig("../figures/" + model_type  + "_" + pov_lvl +  "_roc.jpg")
     plt.clf()
@@ -103,7 +103,7 @@ def pre_rec(y_t, y_s, model_type, pov_lvl, k_inc=0.01):
     ax2.legend(loc='lower right')  # Add legend for the secondary axis
 
     # Show the plot
-    plt.title('PR-k curve')
+    plt.title(f"{model_type.replace("_", " ").title()} Model {pov_lvl.capitalize()} Poverty Level PR-k Curve")
     plt.savefig("../figures/" + model_type + "_" + pov_lvl + "_prk.jpg")
     plt.clf()
 
@@ -279,7 +279,7 @@ def plot_false_discovery_rate_ref(model_names, model_outputs, test_df, protected
     # Add labels and legend
     plt.xlabel('Precision')
     plt.ylabel('False Discovery Rate (FDR) Disparity')
-    plt.title('FDR Disparity vs Precision')
+    plt.title(f"{protected_col_name.replace("_", " ").title()} FDR Disparity vs Precision for {pov_lvl.capitalize()} Poverty Level")
     plt.legend()
     plt.xlim(0, 2)
     plt.ylim(0, 2) 
@@ -329,7 +329,7 @@ def plot_recall_disparity(model_names, model_outputs, test_df, protected_cols, p
     # Add labels and legend
     plt.xlabel('Precision')
     plt.ylabel('Recall Disparity')
-    plt.title('Recall Disparity vs Precision')
+    plt.title(f"{protected_col_name.replace("_", " ").title()} Recall Disparity vs Precision for {pov_lvl.capitalize()} Poverty Level")
     plt.legend()
     plt.xlim(0, 2)
     plt.ylim(0, 2)
